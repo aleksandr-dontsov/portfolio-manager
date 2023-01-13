@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./services/web
+    command: python app.py
+    volumes:
+      - ./services/web/:/usr/src/app/
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./.env.dev
+    entrypoint: /usr/src/app/entrypoint.sh
+
+  db:
+    image: postgres:13-alpine
+    command: ["postgres", "-c", "log_statement=all"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=portfolio_manager
+      - POSTGRES_PASSWORD=portfolio_manager
+      - POSTGRES_DB=portfolio_manager_dev
+
+volumes:
+  postgres_data:
