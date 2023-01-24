@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-COPY . /usr/src/app/
+COPY ./Pipfile ./Pipfile.lock /usr/src/app/
 
 RUN pip install --upgrade pip && \
     pip install pipenv
@@ -14,3 +14,5 @@ RUN pip install --upgrade pip && \
 # --deploy Abort if Pipfile.lock is out-of-date
 RUN pipenv install --system --deploy
 RUN apk add --no-cache netcat-openbsd
+
+COPY . /usr/src/app/
