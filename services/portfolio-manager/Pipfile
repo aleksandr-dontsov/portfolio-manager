@@ -8,6 +8,9 @@ flask = "*"
 psycopg2-binary = "*"
 flask-sqlalchemy = "*"
 connexion = "*"
+swagger-ui-bundle = "*"
+flask-marshmallow = {extras = ["sqlalchemy"], version = "*"}
+marshmallow-enum = "*"
 
 [dev-packages]
 

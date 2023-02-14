@@ -1,0 +1,187 @@
+# swagger.yml
+
+# The version of your OpenAPI definition
+openapi: 3.0.0
+info:
+    title: "Portfolio Manager REST API"
+    description: "An API about managing portfolios"
+    version: "1.0.0"
+
+servers:
+    # Defines the root path of your API
+    # All API paths will be accessible through
+    # http://localhost:5000/api
+    - url: "/api"
+
+# Components are building blocks in your OpenAPI specification
+# that you can reference from other parts of your sepcification
+components:
+    schemas:
+        Currency:
+            # Data tyoe of the schema
+            type: "object"
+            # Required properties
+            # Any property you define as required
+            # must exist in properties
+            required:
+                - code
+                - name
+            properties:
+                code:
+                    type: "string"
+                name:
+                    type: "string"
+
+        Portfolio:
+            type: "object"
+            required:
+                - name
+                - user_id
+                - currency_id
+            properties:
+                name:
+                    type: "string"
+                user_id:
+                    type: "integer"
+                currency_id:
+                    type: "integer"
+
+        Security:
+            type: "object"
+            required:
+                - isin
+                - symbol
+            properties:
+                isin:
+                    type: "string"
+                symbol:
+                    type: "string"
+
+        Trade:
+            type: "object"
+            required:
+                - portfolio_id
+                - currency_id
+                - security_id
+                - type
+                - datetime
+                - unit_price
+                - quantity
+                - brokerage_fee
+            properties:
+                portfolio_id:
+                    type: "integer"
+                currency_id:
+                    type: "integer"
+                security_id:
+                    type: "integer"
+                trade_type:
+                    type: "string"
+                datetime:
+                    type: "string"
+                unit_price:
+                    type: "number"
+                quantity:
+                    type: "number"
+                brokerage_fee:
+                    type: "number"
+
+    parameters:
+        portfolio_id:
+            name: "portfolio_id"
+            description: "Id of the portfolio to get"
+            in: path
+            required: True
+            schema:
+                type: "integer"
+
+
+paths:
+    # The relative URL of your API endpoint
+    /portfolios:
+        # The HTTP method that this URL endpoint will respond to
+        get:
+            # The Python function that will respond to the request
+            operationId: "portfolios.read_all"
+            # The tags assigned to this endpoint. It helps to group
+            # the operations in the UI
+            tags:
+                - Portfolios
+            # The UI display text for this endpoint
+            summary: "Read the list of portfolios"
+            # The status codes the endpoint responds with
+            responses:
+                "200":
+                    description: "Successfully read portfolios list"
+
+        post:
+            operationId: "portfolios.create"
+            tags:
+                - Portfolios
+            summary: "Create a portfolio"
+            requestBody:
+                description: "Portfolio to create"
+                required: True
+                content:
+                    # Define data exchange format
+                    application/json:
+                        schema:
+                            x-body-name: "portfolio"
+                            $ref: "#/components/schemas/Portfolio"
+            responses:
+                # The request succeeded, and a new resource
+                # was created as a result
+                "201":
+                    description: "Successfully created portfolio"
+
+    /portfolios/{portfolio_id}:
+        get:
+            operationId: "portfolios.read_one"
+            tags:
+                - Portfolios
+            summary: "Read one portfolio"
+            parameters:
+                - $ref: "#/components/parameters/portfolio_id"
+            responses:
+                "200":
+                    description: "Successfully read portfolio"
+
+        put:
+            operationId: "portfolios.update"
+            tags:
+                - Portfolios
+            summary: "Update a portfolio"
+            parameters:
+                - $ref: "#/components/parameters/portfolio_id"
+            responses:
+                "200":
+                    description: "Successfully updated portfolio"
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            x-body-name: "portfolio"
+                            $ref: "#/components/schemas/Portfolio"
+        
+        delete:
+            operationId: "portfolios.delete"
+            tags:
+                - Portfolios
+            summary: "Delete a portfolio"
+            parameters:
+                - $ref: "#/components/parameters/portfolio_id"
+            responses:
+                "204":
+                    description: "Successfully deleted portfolio"
+
+    /portfolios/{portfolio_id}/trades:
+        get:
+            operationId: "trades.read_all"
+            tags:
+                - Trades
+            summary: "Read the list of trades for a given portfolio"
+            parameters:
+                - $ref: "#/components/parameters/portfolio_id"
+            responses:
+                "200":
+                    description: "Successfully read trades list"

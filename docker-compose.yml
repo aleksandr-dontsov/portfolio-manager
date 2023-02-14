@@ -1,36 +1,36 @@
 version: '3.8'
 
 services:
-  portfolio-manager:
-    build: ./services/portfolio-manager
-    command: ["python", "./app/app.py"]
-    volumes:
-      - ./services/portfolio-manager/:/usr/src/app/
-    ports:
-      - "5000:5000"
-    env_file:
-      - ./.env.dev
-    entrypoint: /usr/src/app/entrypoint.sh
+    web:
+        build: ./services/portfolio-manager
+        command: ["python", "./app/app.py"]
+        volumes:
+            - ./services/portfolio-manager/:/usr/src/app/
+        ports:
+            - "5000:5000"
+        env_file:
+            - ./.env.dev
+        entrypoint: /usr/src/app/entrypoint.sh
 
-  db:
-    image: postgres:13-alpine
-    command: ["postgres", "-c", "log_statement=all"]
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    environment:
-      # [Optional]
-      # Creates the specified user with superuser power
-      # and a database with the same name
-      - POSTGRES_USER=portfolio_manager
-      # [Required]
-      # Sets the superuser password for PostgreSQL
-      - POSTGRES_PASSWORD=portfolio_manager
-      # [Optional]
-      # Defines a different name for the default database
-      # that is created when the image is first started
-      # If it's not defined than POSTGRES_USER value
-      # will be used
-      - POSTGRES_DB=portfolio_manager_dev
+    db:
+        image: postgres:13-alpine
+        command: ["postgres", "-c", "log_statement=all"]
+        volumes:
+            - postgres_data:/var/lib/postgresql/data/
+        environment:
+            # [Optional]
+            # Creates the specified user with superuser power
+            # and a database with the same name
+            - POSTGRES_USER=portfolio_manager
+            # [Required]
+            # Sets the superuser password for PostgreSQL
+            - POSTGRES_PASSWORD=portfolio_manager
+            # [Optional]
+            # Defines a different name for the default database
+            # that is created when the image is first started
+            # If it's not defined than POSTGRES_USER value
+            # will be used
+            - POSTGRES_DB=portfolio_manager_dev
 
 volumes:
-  postgres_data:
+    postgres_data:

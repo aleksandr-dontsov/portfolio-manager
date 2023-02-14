@@ -1,18 +1,37 @@
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+import enum
+from config import db, ma
+from marshmallow_enum import EnumField
 
 class User(db.Model):
     __tablename__ = "user"
 
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(254), nullable=False, unique=True)
-    password_hash=db.Column(db.String(70), nullable=False, unique=True)
-    registered_at=db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
-    updated_at=db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
+    id = db.Column(
+        db.Integer,
+        primary_key=True)
+    email = db.Column(
+        db.String(254),
+        nullable=False,
+        unique=True)
+    password_hash=db.Column(
+        db.String(70),
+        nullable=False,
+        unique=True)
+    registered_at=db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=db.func.now())
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=db.func.now(),
+        onupdate=db.func.now())
 
     portfolios = db.relationship(
-        "Portfolio", back_populates="user", cascade="all, delete", passive_deletes=True)
+        "Portfolio",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        single_parent=True,
+        passive_deletes=True)
 
     def __repr__(self):
         return f'<User {self.email}>'
@@ -25,7 +44,15 @@ class Currency(db.Model):
     name = db.Column(db.String, nullable=False)
 
     portfolios = db.relationship(
-        "Portfolio", back_populates="currency", cascade="all, delete", passive_deletes=True)
+        "Portfolio",
+        back_populates="currency",
+        cascade="all, delete",
+        passive_deletes=True)
+    trades = db.relationship(
+        "Trade",
+        back_populates="currency",
+        cascade="all, delete",
+        passive_deletes=True)
 
     def __repr__(self):
         return f'<Currency {self.code}, {self.name}>'
@@ -33,18 +60,148 @@ class Currency(db.Model):
 class Portfolio(db.Model):
     __tablename__ = "portfolio"
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    currency_id = db.Column(db.Integer, db.ForeignKey("currency.id"), nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
+    id = db.Column(
+        db.Integer,
+        primary_key=True)
+    name = db.Column(
+        db.String(150),
+        nullable=False)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=False)
+    currency_id = db.Column(
+        db.Integer,
+        db.ForeignKey("currency.id"),
+        nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=db.func.now())
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=db.func.now(),
+        onupdate=db.func.now())
 
-    currency = db.relationship("Currency", back_populates="portfolios")
-    user = db.relationship("User", back_populates="portfolios")
-
-    def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+    currency = db.relationship(
+        "Currency",
+        back_populates="portfolios")
+    user = db.relationship(
+        "User",
+        back_populates="portfolios")
+    trades = db.relationship(
+        "Trade",
+        back_populates="portfolio",
+        cascade="all, delete-orphan",
+        single_parent=True,
+        passive_deletes=True,
+        order_by="desc(Trade.datetime)")
 
     def __repr__(self):
         return f'<Portfolio {self.name}, {self.user_id}, {self.currency_id}>'
+
+class Security(db.Model):
+    __tablename__ = "security"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True)
+    isin = db.Column(
+        db.String(12),
+        nullable=False)
+    symbol = db.Column(
+        db.String(5),
+        nullable=False)
+
+    trades = db.relationship(
+        "Trade",
+        back_populates="security",
+        cascade="all, delete-orphan")
+
+class TradeType(enum.Enum):
+    buy = "buy"
+    sell = "sell"
+
+class Trade(db.Model):
+    __tablename__ = "trade"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True)
+    portfolio_id = db.Column(
+        db.Integer,
+        db.ForeignKey("portfolio.id"),
+        nullable=False)
+    currency_id = db.Column(
+        db.Integer,
+        db.ForeignKey("currency.id"),
+        nullable=False)
+    security_id = db.Column(
+        db.Integer,
+        db.ForeignKey("security.id"),
+        nullable=False)
+    trade_type = db.Column(
+        db.Enum(TradeType),
+        nullable=False)
+    datetime = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False)
+    unit_price = db.Column(
+        db.Float(precision=2),
+        db.CheckConstraint(sqltext="unit_price > 0", name="valid_unit_price"),
+        nullable=False)
+    quantity = db.Column(
+        db.Float(precision=2),
+        db.CheckConstraint(sqltext="quantity > 0", name="valid_quantity"),
+        nullable=False)
+    brokerage_fee = db.Column(
+        db.Float(precision=2),
+        db.CheckConstraint(sqltext="brokerage_fee >= 0", name="valid_brokerage_fee"),
+        nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=db.func.now())
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=db.func.now(),
+        onupdate=db.func.now())
+
+    portfolio = db.relationship(
+        "Portfolio",
+        back_populates="trades")
+    currency = db.relationship(
+        "Currency",
+        back_populates="trades")
+    security = db.relationship(
+        "Security",
+        back_populates="trades")
+
+# Inherit from ma.SQLAlchemyAutoSchema
+# to find a SQLAlchemy model and a SQLAlchemy session
+class PortfolioSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        # This is how Marshmallow finds attributes in the Portfolio
+        # class and learns the types of those attributes
+        model = Portfolio
+        # Here we enable deserialization of JSON data and
+        # load of Portfolio model instances from it
+        load_instance = True
+        # Support foreign keys
+        include_fk = True
+
+portfolio_schema = PortfolioSchema()
+portfolios_schema = PortfolioSchema(many=True)
+
+class TradeSchema(ma.SQLAlchemyAutoSchema):
+    trade_type = EnumField(TradeType, by_value=True)
+
+    class Meta:
+        model = Trade
+        load_instance = True
+        include_fk = True
+
+trade_schema = TradeSchema()
+trades_schema = TradeSchema(many=True)
