@@ -1,13 +1,9 @@
 import config
-from manage_db import init_database
 
 app = config.connexion_app
 app.add_api("swagger.yml")
 
 if  __name__ == '__main__':
-    # Init the database    
-    init_database()
-
     # 127.0.0.1 is a default value.
     # Here we need to bind our service to the 0.0.0.0 
     # to make it accessible to machines other than docker.

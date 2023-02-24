@@ -1,8 +1,12 @@
 import enum
 from config import db, ma
 from marshmallow_enum import EnumField
+from marshmallow_sqlalchemy import fields
+from flask_login import UserMixin
 
-class User(db.Model):
+# UserMixin provides implementations of the methods and properties
+# required by the Flask-Login to manage the session for a given user
+class User(UserMixin, db.Model):
     __tablename__ = "user"
 
     id = db.Column(
@@ -13,7 +17,7 @@ class User(db.Model):
         nullable=False,
         unique=True)
     password_hash=db.Column(
-        db.String(70),
+        db.String(128),
         nullable=False,
         unique=True)
     registered_at=db.Column(
@@ -34,7 +38,7 @@ class User(db.Model):
         passive_deletes=True)
 
     def __repr__(self):
-        return f'<User {self.email}>'
+        return f'<User {self.email}, {self.password_hash}>'
 
 class Currency(db.Model):
     __tablename__ = "currency"
@@ -51,7 +55,7 @@ class Currency(db.Model):
     trades = db.relationship(
         "Trade",
         back_populates="currency",
-        cascade="all, delete",
+        cascade="all, delete-orphan",
         passive_deletes=True)
 
     def __repr__(self):
@@ -90,12 +94,11 @@ class Portfolio(db.Model):
     user = db.relationship(
         "User",
         back_populates="portfolios")
+    # Provides a relationship between two mapped classes
     trades = db.relationship(
         "Trade",
         back_populates="portfolio",
         cascade="all, delete-orphan",
-        single_parent=True,
-        passive_deletes=True,
         order_by="desc(Trade.datetime)")
 
     def __repr__(self):
@@ -179,6 +182,22 @@ class Trade(db.Model):
         "Security",
         back_populates="trades")
 
+class CurrencySchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Currency
+        load_instance = True
+        include_fk = False
+
+class TradeSchema(ma.SQLAlchemyAutoSchema):
+    trade_type = EnumField(TradeType, by_value=True)
+    class Meta:
+        model = Trade
+        load_instance = True
+        include_fk = True
+
+trade_schema = TradeSchema()
+trades_schema = TradeSchema(many=True)
+
 # Inherit from ma.SQLAlchemyAutoSchema
 # to find a SQLAlchemy model and a SQLAlchemy session
 class PortfolioSchema(ma.SQLAlchemyAutoSchema):
@@ -191,17 +210,10 @@ class PortfolioSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         # Support foreign keys
         include_fk = True
+        # Add related objects to the schema
+        include_relationships = False
+
+    trades = fields.Nested(TradeSchema, many=True)
 
 portfolio_schema = PortfolioSchema()
 portfolios_schema = PortfolioSchema(many=True)
-
-class TradeSchema(ma.SQLAlchemyAutoSchema):
-    trade_type = EnumField(TradeType, by_value=True)
-
-    class Meta:
-        model = Trade
-        load_instance = True
-        include_fk = True
-
-trade_schema = TradeSchema()
-trades_schema = TradeSchema(many=True)

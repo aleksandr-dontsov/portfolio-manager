@@ -17,6 +17,17 @@ servers:
 # that you can reference from other parts of your sepcification
 components:
     schemas:
+        User:
+            type: "object"
+            required:
+                - email
+                - password
+            properties:
+                email:
+                    type: "string"
+                password:
+                    type: "string"
+
         Currency:
             # Data tyoe of the schema
             type: "object"
@@ -36,13 +47,10 @@ components:
             type: "object"
             required:
                 - name
-                - user_id
                 - currency_id
             properties:
                 name:
                     type: "string"
-                user_id:
-                    type: "integer"
                 currency_id:
                     type: "integer"
 
@@ -60,17 +68,14 @@ components:
         Trade:
             type: "object"
             required:
-                - portfolio_id
                 - currency_id
                 - security_id
-                - type
+                - trade_type
                 - datetime
                 - unit_price
                 - quantity
                 - brokerage_fee
             properties:
-                portfolio_id:
-                    type: "integer"
                 currency_id:
                     type: "integer"
                 security_id:
@@ -95,8 +100,62 @@ components:
             schema:
                 type: "integer"
 
+        trade_id:
+            name: "trade_id"
+            description: "Id of the trade"
+            in: path
+            required: True
+            schema:
+                type: "integer"
+
 
 paths:
+    /signup:
+        post:
+            operationId: "auth.signup"
+            tags:
+                - Authentication
+            summary: "Sign up a new user"
+            requestBody:
+                description: "User credentials"
+                required: True
+                content:
+                    application/json:
+                        schema:
+                            x-body-name: "credentials"
+                            $ref: "#/components/schemas/User"
+            responses:
+                "201":
+                    description: "Successfully signed up user"
+
+    /login:
+        post:
+            operationId: "auth.login"
+            tags:
+                - Authentication
+            summary: "Login to the website"
+            requestBody:
+                description: "User credentials"
+                required: True
+                content:
+                    application/json:
+                        schema:
+                            x-body-name: "credentials"
+                            $ref: "#/components/schemas/User"
+            responses:
+                "200":
+                    description: "Successfully logged-in user"
+
+    /logout:
+        get:
+            operationId: "auth.logout"
+            tags:
+                - Authentication
+            summary: "Logout from the website"
+            responses:
+                "200":
+                    description: "Successfully logged-out user"
+
     # The relative URL of your API endpoint
     /portfolios:
         # The HTTP method that this URL endpoint will respond to
@@ -162,7 +221,7 @@ paths:
                         schema:
                             x-body-name: "portfolio"
                             $ref: "#/components/schemas/Portfolio"
-        
+
         delete:
             operationId: "portfolios.delete"
             tags:
@@ -185,3 +244,56 @@ paths:
             responses:
                 "200":
                     description: "Successfully read trades list"
+
+        post:
+            operationId: "trades.create"
+            tags:
+                - Trades
+            summary: "Create a trade"
+            parameters:
+                - $ref: "#/components/parameters/portfolio_id"
+            requestBody:
+                description: "Trade to create"
+                required: True
+                content:
+                    # Define data exchange format
+                    application/json:
+                        schema:
+                            x-body-name: "trade"
+                            $ref: "#/components/schemas/Trade"
+            responses:
+                # The request succeeded, and a new resource
+                # was created as a result
+                "201":
+                    description: "Successfully created trade"
+
+    /portfolios/{portfolio_id}/trades/{trade_id}:
+        put:
+            operationId: "trades.update"
+            tags:
+                - Trades
+            summary: "Update a trade"
+            parameters:
+                - $ref: "#/components/parameters/portfolio_id"
+                - $ref: "#/components/parameters/trade_id"
+            responses:
+                "200":
+                    description: "Successfully updated trade"
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            x-body-name: "trade"
+                            $ref: "#/components/schemas/Trade"
+
+        delete:
+            operationId: "trades.delete"
+            tags:
+                - Trades
+            summary: "Delete a trade"
+            parameters:
+                - $ref: "#/components/parameters/portfolio_id"
+                - $ref: "#/components/parameters/trade_id"
+            responses:
+                "204":
+                    description: "Successfully deleted trade"
