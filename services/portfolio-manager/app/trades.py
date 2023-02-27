@@ -1,9 +1,14 @@
 from config import db
 from models import Trade, Portfolio, trade_schema, trades_schema
 from flask import abort, make_response
-from flask_login import login_required, current_user
+from flask_security import (
+    auth_required,
+    permissions_required,
+    current_user
+)
 
-@login_required
+@auth_required("session")
+@permissions_required("user-read")
 def read_all(portfolio_id):
     portfolio = db.session.execute(
         db.select(Portfolio).filter_by(id=portfolio_id)).scalar()
@@ -15,7 +20,8 @@ def read_all(portfolio_id):
         db.select(Trade).filter_by(portfolio_id=portfolio_id))
     return trades_schema.dump(trades)
 
-@login_required
+@auth_required("session")
+@permissions_required("user-write")
 def create(portfolio_id, trade):
     portfolio = db.session.scalar(
         db.select(Portfolio).filter_by(id=portfolio_id))
@@ -30,6 +36,8 @@ def create(portfolio_id, trade):
     db.session.commit()
     return trade_schema.dump(new_trade), 201
 
+@auth_required("session")
+@permissions_required("user-write")
 def update(portfolio_id, trade_id, trade):
     portfolio = db.session.scalar(
         db.select(Portfolio).filter_by(id=portfolio_id))
@@ -58,6 +66,8 @@ def update(portfolio_id, trade_id, trade):
     db.session.commit()
     return trade_schema.dump(existing_trade), 201
 
+@auth_required("session")
+@permissions_required("user-write")
 def delete(portfolio_id, trade_id):
     portfolio = db.session.scalar(
         db.select(Portfolio).filter_by(id=portfolio_id))

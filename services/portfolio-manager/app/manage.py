@@ -1,6 +1,7 @@
 from random import choice, uniform
 from datetime import datetime
 from flask.cli import FlaskGroup
+from flask_security import hash_password
 from config import app, db
 from models import (
     User,
@@ -13,12 +14,12 @@ from models import (
 
 USERS = [
     {
-        "email": "john.smith@gmail.com",
-        "password_hash": "qwerty"
+        "email": "test1@test1.com",
+        "password": "test1"
     },
     {
-        "email": "bob.tailor@gmail.com",
-        "password_hash": "asdfg"
+        "email": "test2@test2.com",
+        "password": "test2"
     }
 ]
 
@@ -65,11 +66,16 @@ def create_db():
 @cli.command("seed_db")
 def seed_db():
     with app.app_context():
-        users = []
+        app.security.datastore.find_or_create_role(
+            name="admin",
+            permissions={"admin-read", "admin-write", "user-read", "user-write"})
+        app.security.datastore.find_or_create_role(
+            name="user", permissions={"user-read", "user-write"})
+
         for data in USERS:
-            users.append(
-                User(email=data["email"], password_hash=data["password_hash"]))
-        
+            app.security.datastore.create_user(
+                email=data["email"], password=hash_password(data["password"]))
+
         currencies = []
         for data in CURRENCIES:
             currencies.append(
@@ -101,6 +107,7 @@ def seed_db():
         #               unit_price=round(uniform(80.00, 120.00), 2),
         #               quantity=round(uniform(1.00, 5.00), 2),
         #               brokerage_fee=round(uniform(0.00, 1.00), 2)))
+
         db.session.add_all(currencies)
         db.session.add_all(securities)
         db.session.commit()

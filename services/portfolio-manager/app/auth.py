@@ -1,42 +1,35 @@
 from flask import make_response, abort
-from flask_login import login_user, login_required, logout_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from config import db, login_manager
-from models import User
-
-# This callback is used to reload a user object
-# from the user id stored in the session
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.execute(
-        db.Select(User).filter_by(id=int(user_id))).scalar()
+from flask_security import (
+    hash_password,
+    verify_password,
+    login_user,
+    logout_user,
+    auth_required,
+    current_user
+)
+from config import app
 
 def signup(credentials):
-    existing_user = db.session.execute(
-        db.select(User).filter(User.email == credentials['email'])).scalar()
-    if existing_user:
+    existing_user = app.security.datastore.find_user(email=credentials['email'])
+    if existing_user is not None:
         abort(406, f"User with email {credentials['email']} already exists")
-
-    new_user = User(
-        email=credentials['email'],
-        # Hash a password with the given method and a salt of a specified length
-        password_hash=generate_password_hash(credentials['password'], method='sha256'))
-    db.session.add(new_user)
-    db.session.commit()
+    app.security.datastore.create_user(
+        email=credentials['email'], password=hash_password(credentials['password']), roles=["user"])
+    app.security.datastore.db.session.commit()
     return make_response(
-        f"User {new_user.email} successfully signed up", 201)
+        f"User {credentials['email']} successfully signed up", 201)
 
 def login(credentials):
-    existing_user = db.session.execute(
-        db.select(User).filter(User.email == credentials['email'])).scalar()
-
+    existing_user = app.security.datastore.find_user(email=credentials['email'])
     if existing_user is None:
         abort(400, f"User with email {credentials['email']} not found")
 
     # Check a password against a given salted and hashed password value
-    if not check_password_hash(existing_user.password_hash, credentials['password']):
+    if not verify_password(password=credentials['password'], password_hash=existing_user.password):
         abort(400, f"Wrong password for {credentials['email']}")
 
+    # Remember flag prevents a user from being logged out
+    # when the browser is closed
     if not login_user(user=existing_user, remember=True):
         abort(400)
 
@@ -45,9 +38,22 @@ def login(credentials):
     # https://web.archive.org/web/20120517003641/http://flask.pocoo.org/snippets/62/
 
     return make_response(
-        f"User {credentials['email']} logged in")
+        f"User {credentials['email']} logged in", 200)
 
-@login_required
+@auth_required()
 def logout():
+    email = current_user.email
     logout_user()
-    return "Logout", 200
+    return make_response(
+        f"User {email} logged out", 200)
+
+@auth_required()
+def change_password(passwords):
+    if not verify_password(password=passwords['current_password'], password_hash=current_user.password):
+        abort(400, f"Wrong password for {current_user.email}")
+
+    current_user.password = hash_password(passwords['new_password'])
+    app.security.datastore.db.session.merge(current_user)
+    app.security.datastore.db.session.commit()
+    return make_response(
+        f"Password for {current_user.email} has been successfully changed ", 200)

@@ -1,44 +1,28 @@
 import enum
-from config import db, ma
+from config import db, ma, app
 from marshmallow_enum import EnumField
 from marshmallow_sqlalchemy import fields
-from flask_login import UserMixin
+from flask_security.models import fsqla_v3 as fsqla
+from flask_security import (
+    SQLAlchemyUserDatastore,
+    Security as FlaskSecurity
+)
 
-# UserMixin provides implementations of the methods and properties
-# required by the Flask-Login to manage the session for a given user
-class User(UserMixin, db.Model):
+fsqla.FsModels.set_db_info(db)
+
+class Role(db.Model, fsqla.FsRoleMixin):
+    __tablename__ = "role"
+    pass
+
+# FsUserMixin provides user properties
+class User(db.Model, fsqla.FsUserMixin):
     __tablename__ = "user"
-
-    id = db.Column(
-        db.Integer,
-        primary_key=True)
-    email = db.Column(
-        db.String(254),
-        nullable=False,
-        unique=True)
-    password_hash=db.Column(
-        db.String(128),
-        nullable=False,
-        unique=True)
-    registered_at=db.Column(
-        db.DateTime(timezone=True),
-        nullable=False,
-        server_default=db.func.now())
-    updated_at = db.Column(
-        db.DateTime(timezone=True),
-        nullable=False,
-        server_default=db.func.now(),
-        onupdate=db.func.now())
-
     portfolios = db.relationship(
         "Portfolio",
         back_populates="user",
         cascade="all, delete-orphan",
         single_parent=True,
         passive_deletes=True)
-
-    def __repr__(self):
-        return f'<User {self.email}, {self.password_hash}>'
 
 class Currency(db.Model):
     __tablename__ = "currency"
@@ -57,9 +41,6 @@ class Currency(db.Model):
         back_populates="currency",
         cascade="all, delete-orphan",
         passive_deletes=True)
-
-    def __repr__(self):
-        return f'<Currency {self.code}, {self.name}>'
 
 class Portfolio(db.Model):
     __tablename__ = "portfolio"
@@ -217,3 +198,7 @@ class PortfolioSchema(ma.SQLAlchemyAutoSchema):
 
 portfolio_schema = PortfolioSchema()
 portfolios_schema = PortfolioSchema(many=True)
+
+# Setup Flask-Security
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+app.security = FlaskSecurity(app, user_datastore)
