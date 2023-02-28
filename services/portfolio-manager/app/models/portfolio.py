@@ -1,28 +1,9 @@
 import enum
-from config import db, ma, app
+
+from app.extensions import db, ma
+
 from marshmallow_enum import EnumField
 from marshmallow_sqlalchemy import fields
-from flask_security.models import fsqla_v3 as fsqla
-from flask_security import (
-    SQLAlchemyUserDatastore,
-    Security as FlaskSecurity
-)
-
-fsqla.FsModels.set_db_info(db)
-
-class Role(db.Model, fsqla.FsRoleMixin):
-    __tablename__ = "role"
-    pass
-
-# FsUserMixin provides user properties
-class User(db.Model, fsqla.FsUserMixin):
-    __tablename__ = "user"
-    portfolios = db.relationship(
-        "Portfolio",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        single_parent=True,
-        passive_deletes=True)
 
 class Currency(db.Model):
     __tablename__ = "currency"
@@ -71,9 +52,6 @@ class Portfolio(db.Model):
 
     currency = db.relationship(
         "Currency",
-        back_populates="portfolios")
-    user = db.relationship(
-        "User",
         back_populates="portfolios")
     # Provides a relationship between two mapped classes
     trades = db.relationship(
@@ -198,7 +176,3 @@ class PortfolioSchema(ma.SQLAlchemyAutoSchema):
 
 portfolio_schema = PortfolioSchema()
 portfolios_schema = PortfolioSchema(many=True)
-
-# Setup Flask-Security
-user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-app.security = FlaskSecurity(app, user_datastore)

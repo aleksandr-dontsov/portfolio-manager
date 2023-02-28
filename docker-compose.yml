@@ -3,7 +3,7 @@ version: '3.8'
 services:
     web:
         build: ./services/portfolio-manager
-        command: ["python", "./app/app.py"]
+        command: ["python", "./server.py"]
         volumes:
             - ./services/portfolio-manager/:/usr/src/app/
         ports:

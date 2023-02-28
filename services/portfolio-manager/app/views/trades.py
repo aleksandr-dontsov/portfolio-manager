@@ -1,10 +1,15 @@
-from config import db
-from models import Trade, Portfolio, trade_schema, trades_schema
 from flask import abort, make_response
 from flask_security import (
     auth_required,
     permissions_required,
     current_user
+)
+from app.extensions import db
+from app.models.portfolio import (
+    Portfolio,
+    Trade,
+    trade_schema,
+    trades_schema
 )
 
 @auth_required("session")

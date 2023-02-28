@@ -7,20 +7,20 @@ from flask_security import (
     auth_required,
     current_user
 )
-from config import app
+from app.extensions import se
 
 def signup(credentials):
-    existing_user = app.security.datastore.find_user(email=credentials['email'])
+    existing_user = se.datastore.find_user(email=credentials['email'])
     if existing_user is not None:
         abort(406, f"User with email {credentials['email']} already exists")
-    app.security.datastore.create_user(
+    se.datastore.create_user(
         email=credentials['email'], password=hash_password(credentials['password']), roles=["user"])
-    app.security.datastore.db.session.commit()
+    se.datastore.db.session.commit()
     return make_response(
         f"User {credentials['email']} successfully signed up", 201)
 
 def login(credentials):
-    existing_user = app.security.datastore.find_user(email=credentials['email'])
+    existing_user = se.datastore.find_user(email=credentials['email'])
     if existing_user is None:
         abort(400, f"User with email {credentials['email']} not found")
 
@@ -53,7 +53,7 @@ def change_password(passwords):
         abort(400, f"Wrong password for {current_user.email}")
 
     current_user.password = hash_password(passwords['new_password'])
-    app.security.datastore.db.session.merge(current_user)
-    app.security.datastore.db.session.commit()
+    se.datastore.db.session.merge(current_user)
+    se.datastore.db.session.commit()
     return make_response(
         f"Password for {current_user.email} has been successfully changed ", 200)

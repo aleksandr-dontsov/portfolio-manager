@@ -1,7 +1,6 @@
-import config
+from app import create_app
 
-app = config.connexion_app
-app.add_api("swagger.yml")
+app = create_app()
 
 if  __name__ == '__main__':
     # 127.0.0.1 is a default value.
@@ -9,4 +8,4 @@ if  __name__ == '__main__':
     # to make it accessible to machines other than docker.
     # Otherwise the service will be only accessible
     # from the docker localhost
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
