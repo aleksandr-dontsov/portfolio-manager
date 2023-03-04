@@ -14,4 +14,9 @@ class Role(db.Model, fsqla.FsRoleMixin):
 class User(db.Model, fsqla.FsUserMixin):
     __tablename__ = "user"
 
+    portfolios = db.relationship(
+        "Portfolio",
+        back_populates="user",
+        cascade="all, delete-orphan")
+
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)

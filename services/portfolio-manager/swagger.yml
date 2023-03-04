@@ -71,7 +71,7 @@ components:
                 - currency_id
                 - security_id
                 - trade_type
-                - datetime
+                - trade_datetime
                 - unit_price
                 - quantity
                 - brokerage_fee
@@ -82,7 +82,7 @@ components:
                     type: "integer"
                 trade_type:
                     type: "string"
-                datetime:
+                trade_datetime:
                     type: "string"
                 unit_price:
                     type: "number"
@@ -119,10 +119,10 @@ paths:
             requestBody:
                 description: "User credentials"
                 required: True
+                x-body-name: "credentials"
                 content:
                     application/json:
                         schema:
-                            x-body-name: "credentials"
                             $ref: "#/components/schemas/User"
             responses:
                 "201":
@@ -137,17 +137,17 @@ paths:
             requestBody:
                 description: "User credentials"
                 required: True
+                x-body-name: "credentials"
                 content:
                     application/json:
                         schema:
-                            x-body-name: "credentials"
                             $ref: "#/components/schemas/User"
             responses:
                 "200":
                     description: "Successfully logged-in user"
 
     /logout:
-        get:
+        post:
             operationId: "auth.logout"
             tags:
                 - Authentication
@@ -207,11 +207,11 @@ paths:
             requestBody:
                 description: "Portfolio to create"
                 required: True
+                x-body-name: "portfolio"
                 content:
                     # Define data exchange format
                     application/json:
                         schema:
-                            x-body-name: "portfolio"
                             $ref: "#/components/schemas/Portfolio"
             responses:
                 # The request succeeded, and a new resource
@@ -242,10 +242,10 @@ paths:
                 "200":
                     description: "Successfully updated portfolio"
             requestBody:
+                x-body-name: "portfolio"
                 content:
                     application/json:
                         schema:
-                            x-body-name: "portfolio"
                             $ref: "#/components/schemas/Portfolio"
 
         delete:
@@ -281,11 +281,11 @@ paths:
             requestBody:
                 description: "Trade to create"
                 required: True
+                x-body-name: "trade_params"
                 content:
                     # Define data exchange format
                     application/json:
                         schema:
-                            x-body-name: "trade"
                             $ref: "#/components/schemas/Trade"
             responses:
                 # The request succeeded, and a new resource
@@ -306,10 +306,10 @@ paths:
                 "200":
                     description: "Successfully updated trade"
             requestBody:
+                x-body-name: "trade_params"
                 content:
                     application/json:
                         schema:
-                            x-body-name: "trade"
                             $ref: "#/components/schemas/Trade"
 
         delete:

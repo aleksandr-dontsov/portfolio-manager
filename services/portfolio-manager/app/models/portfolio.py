@@ -30,7 +30,7 @@ class Portfolio(db.Model):
         db.Integer,
         primary_key=True)
     name = db.Column(
-        db.String(150),
+        db.String,
         nullable=False)
     user_id = db.Column(
         db.Integer,
@@ -50,6 +50,9 @@ class Portfolio(db.Model):
         server_default=db.func.now(),
         onupdate=db.func.now())
 
+    user = db.relationship(
+        "User",
+        back_populates="portfolios")
     currency = db.relationship(
         "Currency",
         back_populates="portfolios")
@@ -58,10 +61,7 @@ class Portfolio(db.Model):
         "Trade",
         back_populates="portfolio",
         cascade="all, delete-orphan",
-        order_by="desc(Trade.datetime)")
-
-    def __repr__(self):
-        return f'<Portfolio {self.name}, {self.user_id}, {self.currency_id}>'
+        order_by="desc(Trade.trade_datetime)")
 
 class Security(db.Model):
     __tablename__ = "security"
@@ -106,7 +106,7 @@ class Trade(db.Model):
     trade_type = db.Column(
         db.Enum(TradeType),
         nullable=False)
-    datetime = db.Column(
+    trade_datetime = db.Column(
         db.DateTime(timezone=True),
         nullable=False)
     unit_price = db.Column(
