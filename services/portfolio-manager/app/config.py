@@ -1,8 +1,10 @@
 import os
 from datetime import timedelta
 
+
 class Config(object):
     """Base configuration"""
+
     # Disable debugging
     DEBUG = False
 
@@ -21,9 +23,7 @@ class Config(object):
     # Makes sure that DB connections from the pool are still valid.
     # It's importation for entire application since many DBaaS options
     # automatically close idle connections
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True
-    }
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
     # A secret key is used for signing cookies. The secret key is
     # required by session object which is built on top of cookies.
@@ -32,7 +32,9 @@ class Config(object):
     SECRET_KEY = os.getenv("SECRET_KEY", "BAD_SECRET_KEY")
 
     # Bcrypt is set as a default SECURITY_PASSWORD_HASH, which requires a salt
-    SECURITY_PASSWORD_SALT = os.getenv("SECURITY_PASSWORD_SALT", "BAD_SECURITY_PASSWORD_SALT")
+    SECURITY_PASSWORD_SALT = os.getenv(
+        "SECURITY_PASSWORD_SALT", "BAD_SECURITY_PASSWORD_SALT"
+    )
 
     # Enables the change password endpoint
     SECURITY_CHANGEABLE = True
@@ -53,13 +55,15 @@ class Config(object):
     # that cookies will be sent only from the origin for which it was set for
     SESSION_COOKIE_SAMESITE = "Strict"
 
+
 class DevelopmentConfig(Config):
     """Development configuration"""
+
     DEBUG = True
+
 
 class TestingConfig(Config):
     """Testing configuration"""
-    DEBUG = True
 
     TESTING = True
 

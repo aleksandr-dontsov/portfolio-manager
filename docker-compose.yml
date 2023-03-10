@@ -3,7 +3,12 @@ version: '3.8'
 services:
     web:
         build: ./services/portfolio-manager
-        command: ["python", "./server.py"]
+        # 127.0.0.1 is a default value.
+        # Here we need to bind our service to the 0.0.0.0
+        # to make it accessible to machines other than docker.
+        # Otherwise the service will be only accessible
+        # from the docker localhost
+        command: ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
         volumes:
             - ./services/portfolio-manager/:/usr/src/app/
         ports:

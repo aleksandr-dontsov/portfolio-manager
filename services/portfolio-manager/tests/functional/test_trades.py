@@ -8,17 +8,10 @@ behavior of the trades views.
 import pytest
 from datetime import datetime
 from sqlalchemy import func
-from conftest import (
-    new_portfolio,
-    new_user,
-    existing_trade,
-    create_random_trade_params
-)
-from app.extensions import db, se
-from app.models.portfolio import (
-    Portfolio,
-    Trade
-)
+from conftest import existing_trade, create_random_trade_params
+from app.extensions import db
+from app.models.portfolio import Trade
+
 
 def test_unauthenticated_trades_read_all(test_client):
     """
@@ -29,10 +22,14 @@ def test_unauthenticated_trades_read_all(test_client):
     response = test_client.get("/api/portfolios/1/trades")
     assert response.status_code == 401
 
-def test_unauthorized_trades_read_all(test_client, login_user, create_new_user_portfolio):
+
+def test_unauthorized_trades_read_all(
+    test_client, login_user, create_new_user_portfolio
+):
     """
     GIVEN a Flask application configured for testing
-    WHEN the '/portfolios/{portfolio_id}/trades' page is requested (GET) when the user is logged in and
+    WHEN the '/portfolios/{portfolio_id}/trades' page is requested (GET)
+         when the user is logged in and
          the portfolio with a given id belongs to other user
     THEN check that an error response is returned to the user
     """
@@ -40,10 +37,12 @@ def test_unauthorized_trades_read_all(test_client, login_user, create_new_user_p
     response = test_client.get("/api/portfolios/1/trades")
     assert response.status_code == 403
 
+
 def test_successful_read_all(test_client, create_trade):
     """
     GIVEN a Flask application configured for testing
-    WHEN the '/api/portfolios/{portfolio_id}/trades' page is requested (GET) when the user is logged in
+    WHEN the '/api/portfolios/{portfolio_id}/trades'
+         page is requested (GET) when the user is logged in
     THEN check that the response is successful and that the empty list is returned
     """
     response = test_client.get("/api/portfolios/1/trades")
@@ -51,15 +50,19 @@ def test_successful_read_all(test_client, create_trade):
     trades = response.json
     assert len(trades) == 1
 
+
 def test_unauthenticated_trade_create(test_client):
     """
     GIVEN a Flask application configured for testing
-    WHEN the '/portfolios/{portfolio_id}/trades' page is posted to (POST) when the user isn't logged in
+    WHEN the '/portfolios/{portfolio_id}/trades'
+         page is posted to (POST) when the user isn't logged in
     THEN check that an error response is returned to the user
     """
     response = test_client.post(
-        "/api/portfolios/1/trades", json=create_random_trade_params())
+        "/api/portfolios/1/trades", json=create_random_trade_params()
+    )
     assert response.status_code == 401
+
 
 def test_unauthorized_trade_create(test_client, login_user, create_new_user_portfolio):
     """
@@ -69,8 +72,10 @@ def test_unauthorized_trade_create(test_client, login_user, create_new_user_port
     THEN check that an error response is returned to the user
     """
     response = test_client.post(
-        "/api/portfolios/1/trades", json=create_random_trade_params())
+        "/api/portfolios/1/trades", json=create_random_trade_params()
+    )
     assert response.status_code == 403
+
 
 @pytest.mark.parametrize(
     "invalid_trade_params",
@@ -107,8 +112,9 @@ def test_unauthorized_trade_create(test_client, login_user, create_new_user_port
         },
         {
             "brokerage_fee": -9.999,
-        }
-    ])
+        },
+    ],
+)
 def test_invalid_trade_create(test_client, create_portfolio, invalid_trade_params):
     """
     GIVEN a Flask application configured for testing
@@ -119,10 +125,10 @@ def test_invalid_trade_create(test_client, create_portfolio, invalid_trade_param
     trade_params = create_random_trade_params()
     for param in invalid_trade_params.keys():
         trade_params[param] = invalid_trade_params[param]
-    response = test_client.post(
-        "/api/portfolios/1/trades", json=trade_params)
+    response = test_client.post("/api/portfolios/1/trades", json=trade_params)
     assert response.status_code == 400
     assert db.session.execute(func.count(Trade.id)).scalar() == 0
+
 
 def test_successful_trade_create(test_client, create_portfolio):
     """
@@ -136,8 +142,9 @@ def test_successful_trade_create(test_client, create_portfolio):
     assert response.status_code == 201
     trade = response.json
     # Convert from string to datetime object for comparison
-    trade["trade_datetime"] = datetime.fromisoformat(
-        trade["trade_datetime"]).replace(tzinfo=None)
+    trade["trade_datetime"] = datetime.fromisoformat(trade["trade_datetime"]).replace(
+        tzinfo=None
+    )
     assert trade["id"] == 1
     assert trade["portfolio_id"] == 1
     trade_params["id"] = trade["id"]
@@ -147,15 +154,19 @@ def test_successful_trade_create(test_client, create_portfolio):
     assert trade == trade_params
     assert db.session.execute(func.count(Trade.id)).scalar() == 1
 
+
 def test_unauthenticated_trade_update(test_client):
     """
     GIVEN a Flask application configured for testing
-    WHEN the '/portfolios/{portfolio_id}/trades/{trade_id}' page is put to (PUT) when the user isn't logged in
+    WHEN the '/portfolios/{portfolio_id}/trades/{trade_id}'
+         page is put to (PUT) when the user isn't logged in
     THEN check that an error response is returned to the user
     """
     response = test_client.put(
-        "/api/portfolios/1/trades/1", json=create_random_trade_params())
+        "/api/portfolios/1/trades/1", json=create_random_trade_params()
+    )
     assert response.status_code == 401
+
 
 def test_unauthorized_trade_update(test_client, login_user, create_new_user_portfolio):
     """
@@ -165,8 +176,10 @@ def test_unauthorized_trade_update(test_client, login_user, create_new_user_port
     THEN check that an error response is returned to the user
     """
     response = test_client.put(
-        "/api/portfolios/1/trades/1", json=create_random_trade_params())
+        "/api/portfolios/1/trades/1", json=create_random_trade_params()
+    )
     assert response.status_code == 403
+
 
 @pytest.mark.parametrize(
     "invalid_trade_params",
@@ -203,12 +216,14 @@ def test_unauthorized_trade_update(test_client, login_user, create_new_user_port
         },
         {
             "brokerage_fee": -9.999,
-        }
-    ])
+        },
+    ],
+)
 def test_invalid_trade_update(test_client, create_trade, invalid_trade_params):
     """
     GIVEN a Flask application configured for testing
-    WHEN the '/portfolios/{portfolio_id}/trades/{trade_id}' page is put to (PUT) when the user is logged in
+    WHEN the '/portfolios/{portfolio_id}/trades/{trade_id}'
+         page is put to (PUT) when the user is logged in
          and invalid trade params are passed
     THEN check that an error response is returned to the user
     """
@@ -218,10 +233,12 @@ def test_invalid_trade_update(test_client, create_trade, invalid_trade_params):
     response = test_client.put("/api/portfolios/1/trades/1", json=trade_params)
     assert response.status_code == 400
 
+
 def test_successful_trade_update(test_client, create_trade):
     """
     GIVEN a Flask application configured for testing
-    WHEN the '/portfolios/{portfolio_id}/trades/{trade_id}' page is put to (PUT) when the user is logged in
+    WHEN the '/portfolios/{portfolio_id}/trades/{trade_id}'
+         page is put to (PUT) when the user is logged in
     THEN check that the response is successful and
          that the trade has been updated in the database
     """
@@ -237,7 +254,9 @@ def test_successful_trade_update(test_client, create_trade):
     assert response.status_code == 200
     updated_trade = response.json
     # Convert from string to datetime object for comparison
-    updated_trade["trade_datetime"] = datetime.fromisoformat(updated_trade["trade_datetime"]).replace(tzinfo=None)
+    updated_trade["trade_datetime"] = datetime.fromisoformat(
+        updated_trade["trade_datetime"]
+    ).replace(tzinfo=None)
     assert 1 == updated_trade["id"]
     assert existing_trade["portfolio_id"] == updated_trade["portfolio_id"]
     new_trade_params["id"] = updated_trade["id"]
@@ -246,14 +265,17 @@ def test_successful_trade_update(test_client, create_trade):
     new_trade_params["updated_at"] = updated_trade["updated_at"]
     assert updated_trade == new_trade_params
 
+
 def test_unauthenticated_trade_delete(test_client):
     """
     GIVEN a Flask application configured for testing
-    WHEN the '/portfolios/{portfolio_id}/trades' page is requested (DELETE) when the user isn't logged in
+    WHEN the '/portfolios/{portfolio_id}/trades'
+         page is requested (DELETE) when the user isn't logged in
     THEN check that an error response is returned to the user
     """
     response = test_client.delete("/api/portfolios/1/trades/1")
     assert response.status_code == 401
+
 
 def test_unauthorized_trade_delete(test_client, login_user, create_new_user_portfolio):
     """
@@ -265,10 +287,12 @@ def test_unauthorized_trade_delete(test_client, login_user, create_new_user_port
     response = test_client.delete("/api/portfolios/1/trades/1")
     assert response.status_code == 403
 
+
 def test_successful_trade_delete(test_client, create_trade):
     """
     GIVEN a Flask application configured for testing
-    WHEN the '/portfolios/{portfolio_id}/trades/{trade_id}' page is requested (DELETE) when the user is logged in
+    WHEN the '/portfolios/{portfolio_id}/trades/{trade_id}'
+         page is requested (DELETE) when the user is logged in
     THEN check that the response is successful and
          that the trade has been updated in the database
     """

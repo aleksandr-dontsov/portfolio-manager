@@ -18,6 +18,8 @@ flask-security-too = {extras = ["common", "fsqla"], version = "*"}
 [dev-packages]
 pytest = "*"
 pytest-cov = "*"
+black = "*"
+flake8 = "*"
 
 [requires]
 python_version = "3.8"

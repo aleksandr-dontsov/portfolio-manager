@@ -1,29 +1,26 @@
 from flask import abort, make_response
-from flask_security import (
-    auth_required,
-    permissions_required,
-    current_user
-)
+from flask_security import auth_required, permissions_required, current_user
 from app.extensions import db
-from app.models.portfolio import (
-    Portfolio,
-    portfolio_schema,
-    portfolios_schema
-)
+from app.models.portfolio import Portfolio, portfolio_schema, portfolios_schema
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.exceptions import HTTPException
 
 MAX_PORTFOLIO_NAME_LENGTH = 150
 
+
 def validate_portfolio_params(portfolio):
     if not portfolio["name"]:
-        abort(400, f"Portfolio name is empty")
+        abort(400, "Portfolio name is empty")
 
     if len(portfolio["name"]) > MAX_PORTFOLIO_NAME_LENGTH:
-        abort(400, f"Portfolio name length is more than {MAX_PORTFOLIO_NAME_LENGTH} characters")
+        abort(
+            400,
+            f"Portfolio name length is more than {MAX_PORTFOLIO_NAME_LENGTH} characters",
+        )
 
     if portfolio["currency_id"] < 1:
-        abort(400, f"Specified currency doesn't exist")
+        abort(400, "Specified currency doesn't exist")
+
 
 def validate_portfolio(portfolio_id):
     portfolio = db.one_or_404(db.select(Portfolio).filter_by(id=portfolio_id))
@@ -40,10 +37,14 @@ def read_all():
     # Session.execute is a preferable way
     try:
         portfolios = db.session.execute(
-            db.select(Portfolio).filter_by(user_id=current_user.id).order_by(Portfolio.name)).scalars()
+            db.select(Portfolio)
+            .filter_by(user_id=current_user.id)
+            .order_by(Portfolio.name)
+        ).scalars()
         return portfolios_schema.dump(portfolios), 200
     except Exception as error:
         abort(500, f"Cannot get portfolio entries, error: {error}")
+
 
 @auth_required("session")
 @permissions_required("user-read")
@@ -58,16 +59,20 @@ def read_one(portfolio_id):
     except Exception as error:
         abort(500, f"Cannot get a given portfolio entry, error: {error}")
 
+
 @auth_required("session")
 @permissions_required("user-write")
 def create(portfolio):
     try:
         validate_portfolio_params(portfolio)
         existing_portfolio = db.session.execute(
-            db.select(Portfolio).filter_by(user_id=current_user.id, name=portfolio['name'])).scalar()
+            db.select(Portfolio).filter_by(
+                user_id=current_user.id, name=portfolio["name"]
+            )
+        ).scalar()
         if existing_portfolio is not None:
             abort(400, f"Portfolio with name {portfolio['name']} already exists")
-        portfolio['user_id'] = current_user.id
+        portfolio["user_id"] = current_user.id
         new_portfolio = portfolio_schema.load(portfolio, session=db.session)
         db.session.add(new_portfolio)
         db.session.commit()
@@ -100,6 +105,7 @@ def update(portfolio_id, portfolio):
         abort(400, f"Cannot update an existing portfolio entry in database: {error}")
     except Exception as error:
         abort(500, f"Cannot update a portfolio entry, error: {error}")
+
 
 @auth_required("session")
 @permissions_required("user-write")
