@@ -1,7 +1,7 @@
 import pathlib
 from connexion import FlaskApp
 from connexion.resolver import RelativeResolver
-from app.extensions import db, ma, se
+from app.extensions import db, migrate, ma, se
 from app.models.user import user_datastore
 
 
@@ -28,13 +28,12 @@ def create_app(config_name):
 
 
 def register_blueprints(app):
-    from app.manage import bp as bp_db
-
-    app.register_blueprint(bp_db)
+    pass
 
 
 def initialize_extensions(app):
     db.init_app(app)
+    migrate.init_app(app, db)
     ma.init_app(app)
     se.init_app(app, user_datastore)
 

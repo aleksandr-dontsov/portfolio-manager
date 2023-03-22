@@ -11,9 +11,17 @@ class Config(object):
     # Disables testing mode
     TESTING = False
 
+    user = os.environ["POSTGRES_USER"]
+    password = os.environ["POSTGRES_PASSWORD"]
+    hostname = os.environ["POSTGRES_HOSTNAME"]
+    port = os.environ["POSTGRES_PORT"]
+    database = os.environ["APPLICATION_DB"]
+
     # The database connection URI used for the default engine
     # URI form: dialect+driver://username:password@host:port/database
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URI", "sqlite://")
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql+psycopg2://{user}:{password}@{hostname}:{port}/{database}"
+    )
 
     # Disables tracking of modifications to the SQLAlchemy session
     # The tracking is required by Flask-SQLAlchemy event notification

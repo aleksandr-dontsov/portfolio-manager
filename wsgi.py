@@ -7,5 +7,5 @@ import os
 
 from app import create_app
 
-# Read config name
+# Use FLASK_CONFIG env variable to specify a config dynamically
 app = create_app(os.environ["FLASK_CONFIG"])

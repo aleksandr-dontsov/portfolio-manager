@@ -14,7 +14,7 @@ def test_signup_form(test_client):
     """
     GIVEN a Flask application configured for testing
     WHEN the '/signup' page is requested (GET)
-    THEN check that the processig of the request is not allowed
+    THEN check that the processing of the request is not allowed
     """
     response = test_client.get("/api/signup")
     assert response.status_code == 405

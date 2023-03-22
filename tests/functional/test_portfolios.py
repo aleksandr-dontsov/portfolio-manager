@@ -49,7 +49,6 @@ def test_unauthenticated_create(test_client):
     "portfolio",
     [
         {"name": "Test", "currency_id": -1},
-        # sqlalchemy.orm.exc.ObjectDeletedError on the logout
         {"name": "AnotherTest", "currency_id": 9999},
         {"name": "", "currency_id": 1},
         {"name": "Too long portfolio name" * 50, "currency_id": 1},

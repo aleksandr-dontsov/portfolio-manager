@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
     web:
-        build: ./services/portfolio-manager
+        build:
+            context: .
+            dockerfile: ./docker/Dockerfile
         # 127.0.0.1 is a default value.
         # Here we need to bind our service to the 0.0.0.0
         # to make it accessible to machines other than docker.
@@ -10,32 +12,19 @@ services:
         # from the docker localhost
         command: ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
         volumes:
-            - ./services/portfolio-manager/:/usr/src/app/
+            - .:/usr/src/app/
         ports:
             - "5000:5000"
         env_file:
-            - ./.env.dev
-        entrypoint: /usr/src/app/entrypoint.sh
+            - ./config/.dev.env
 
     db:
         image: postgres:13-alpine
         command: ["postgres", "-c", "log_statement=all"]
         volumes:
             - postgres_data:/var/lib/postgresql/data/
-        environment:
-            # [Optional]
-            # Creates the specified user with superuser power
-            # and a database with the same name
-            - POSTGRES_USER=portfolio_manager
-            # [Required]
-            # Sets the superuser password for PostgreSQL
-            - POSTGRES_PASSWORD=portfolio_manager
-            # [Optional]
-            # Defines a different name for the default database
-            # that is created when the image is first started
-            # If it's not defined than POSTGRES_USER value
-            # will be used
-            - POSTGRES_DB=portfolio_manager_dev
+        env_file:
+            - ./config/.dev.env
 
 volumes:
     postgres_data:

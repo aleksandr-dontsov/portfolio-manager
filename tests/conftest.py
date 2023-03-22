@@ -1,10 +1,11 @@
+import os
 import pytest
 from random import uniform, randint, choice
 from datetime import datetime, timezone
 from flask_security import current_user
 
+from manage import create_db
 from app import create_app
-from app.config import TestingConfig
 from app.extensions import db, se
 from app.models.portfolio import Currency, Portfolio, Security, Trade
 
@@ -39,9 +40,14 @@ existing_trade = {
 EXISTING_TRADES_NUMBER = 5
 
 
+@pytest.fixture(scope="session")
+def create_database():
+    create_db(os.getenv("APPLICATION_DB"))
+
+
 @pytest.fixture(scope="module")
-def app():
-    yield create_app(TestingConfig)
+def app(create_database):
+    yield create_app(os.environ["FLASK_CONFIG"])
 
 
 @pytest.fixture(scope="module")
@@ -49,11 +55,6 @@ def test_client(app):
     with app.test_client() as testing_client:
         with app.app_context():
             yield testing_client
-
-
-@pytest.fixture(scope="module")
-def test_runner(app):
-    return app.test_cli_runner()
 
 
 @pytest.fixture(scope="function")
@@ -92,6 +93,7 @@ def init_database(test_client):
 @pytest.fixture(scope="function")
 def register_user(init_database):
     se.datastore.create_user(**registered_user, roles=["user"])
+    db.session.commit()
 
 
 @pytest.fixture(scope="function")

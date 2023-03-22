@@ -14,12 +14,14 @@ flask-marshmallow = {extras = ["sqlalchemy"], version = "*"}
 sqlalchemy = "==2.0.1"
 flask-login = "*"
 flask-security-too = {extras = ["common", "fsqla"], version = "*"}
+flask-migrate = "*"
 
 [dev-packages]
 pytest = "*"
 pytest-cov = "*"
 black = "*"
 flake8 = "*"
+pytest-dotenv = "*"
 
 [requires]
 python_version = "3.8"
