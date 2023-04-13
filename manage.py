@@ -1,6 +1,9 @@
+#!/usr/bin/env python
+
 import os
-import signal
 import subprocess
+import signal
+import time
 
 import click
 import psycopg2
@@ -33,21 +36,72 @@ def create_db(database_name):
         print(f"The database {database_name} already exists")
 
 
+def docker_compose_cmdline(stage):
+    docker_compose_file = f"docker-compose.{stage}.yml"
+
+    if not os.path.isfile(docker_compose_file):
+        raise ValueError(f"The file {docker_compose_file} does not exist")
+
+    return ["docker-compose", "-p", stage, "-f", docker_compose_file]
+
+
 @click.group()
 def cli():
     pass
 
 
-@cli.command(context_settings={"ignore_unknown_options": True})
+# context_settings - a dictionary with defaults passed to the context
+# ignore_unknown_options - forwards unknown options rather than triggering a parsing error
+# argument - similar to options but are positional
+# nargs - specifies a number of arguments is accepted. -1 accepts an unlimited number of args
+# Path - type is similar to File, but returns the filename instead of an open file
+@cli.command(context_settings=dict(ignore_unknown_options=True))
+@click.argument("stage", nargs=1, type=click.Path())
 @click.argument("subcommand", nargs=-1, type=click.Path())
-def flask(subcommand):
-    cmdline = ["flask"] + list(subcommand)
+def compose(stage, subcommand):
+    cmdline = docker_compose_cmdline(stage) + list(subcommand)
+
     try:
         p = subprocess.Popen(cmdline)
         p.wait()
     except KeyboardInterrupt:
         p.send_signal(signal.SIGINT)
         p.wait()
+
+
+@cli.command()
+@click.argument("tests", nargs=-1)
+def test(tests):
+    cmdline = docker_compose_cmdline("test") + ["up", "-d"]
+    subprocess.call(cmdline)
+
+    cmdline = docker_compose_cmdline("test") + ["logs", "db"]
+    logs = subprocess.check_output(cmdline).decode("utf-8")
+    while "ready to accept connections" not in logs:
+        time.sleep(0.1)
+        logs = subprocess.check_output(cmdline).decode("utf-8")
+
+    # -s - do not capture output
+    # -vv - increases verbosity adding test function names
+    # --cov - path or package name to measure during execution
+    # --cov-report - coverage report type. term-missing shows the lines which are not covered
+    cmdline = [
+        "python",
+        "-m",
+        "pytest",
+        "-svv",
+        "--cov=app",
+        "--cov-report=term-missing",
+        "tests",
+    ]
+    if tests:
+        cmdline.extend(["-k"])
+        cmdline.extend(tests)
+
+    subprocess.call(cmdline)
+
+    cmdline = docker_compose_cmdline("test") + ["down"]
+    subprocess.call(cmdline)
 
 
 @cli.command()

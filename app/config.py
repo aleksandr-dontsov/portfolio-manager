@@ -64,6 +64,10 @@ class Config(object):
     SESSION_COOKIE_SAMESITE = "Strict"
 
 
+class ProductionConfig(Config):
+    """Production configuration"""
+
+
 class DevelopmentConfig(Config):
     """Development configuration"""
 

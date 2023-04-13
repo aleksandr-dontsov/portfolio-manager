@@ -212,7 +212,25 @@ def test_unauthorized_portfolio_update(
     assert response.status_code == 403
 
 
-def test_unauthenticated_delete(test_client):
+def test_successful_portfolio_update(test_client, create_portfolio):
+    """
+    GIVEN a Flask application configured for testing
+    WHEN the '/portfolios/{portfolio_id}' page is put to (PUT) when the user is logged in
+    THEN check that the response is successful and
+         that the portfolio has been updated in the database
+    """
+
+    response = test_client.put("/api/portfolios/1", json=new_portfolio)
+    assert response.status_code == 200
+    portfolio = response.json
+    assert portfolio["id"] == 1
+    assert portfolio["updated_at"] > portfolio["created_at"]
+    assert portfolio["user_id"] == current_user.id
+    assert portfolio["name"] == new_portfolio["name"]
+    assert portfolio["currency_id"] == new_portfolio["currency_id"]
+
+
+def test_unauthenticated_portfolio_delete(test_client):
     """
     GIVEN a Flask application configured for testing
     WHEN the '/portfolios/{portfolio_id}' page is requested (DELETE) when the user isn't logged in

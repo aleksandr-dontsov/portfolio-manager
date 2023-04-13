@@ -92,6 +92,7 @@ def update(portfolio_id, portfolio):
     try:
         validate_portfolio_params(portfolio)
         existing_portfolio = validate_portfolio(portfolio_id)
+        portfolio["user_id"] = current_user.id
         new_portfolio = portfolio_schema.load(portfolio, session=db.session)
         existing_portfolio.name = new_portfolio.name
         existing_portfolio.currency_id = new_portfolio.currency_id
