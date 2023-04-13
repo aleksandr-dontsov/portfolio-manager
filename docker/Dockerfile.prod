@@ -1,0 +1,36 @@
+FROM python:3.8-alpine
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Create directory for the app user
+RUN mkdir -p /home/app
+
+# Create the app user. By default, Docker runs
+# container processes as root inside of a container.
+# Being root inside of a container means that host
+# can be accessed as a root from within the container
+RUN addgroup -S app && adduser -G app -S app
+
+ENV HOME=/home/app
+ENV APP_HOME=/home/app/web
+RUN mkdir ${APP_HOME}
+WORKDIR ${APP_HOME}
+
+COPY Pipfile Pipfile.lock ${APP_HOME}/
+
+RUN pip install --upgrade pip && \
+    pip install pipenv
+
+RUN pipenv install --system --deploy
+RUN apk add --no-cache netcat-openbsd
+
+# Copy the project
+COPY . ${APP_HOME}
+
+RUN chown -R app:app $APP_HOME/
+
+# Change to the app user
+USER app
+
+ENTRYPOINT [ "/home/app/web/docker/entrypoint.sh" ]

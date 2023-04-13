@@ -15,6 +15,7 @@ sqlalchemy = "==2.0.1"
 flask-login = "*"
 flask-security-too = {extras = ["common", "fsqla"], version = "*"}
 flask-migrate = "*"
+gunicorn = "*"
 
 [dev-packages]
 pytest = "*"

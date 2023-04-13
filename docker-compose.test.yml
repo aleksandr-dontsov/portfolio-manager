@@ -4,7 +4,7 @@ services:
     db:
         image: postgres:13-alpine
         command: ["postgres", "-c", "log_statement=all"]
-        env_file:
-            - ./config/.test.env
         ports:
             - "5433:5432"
+        env_file:
+            - ./config/.test.env
