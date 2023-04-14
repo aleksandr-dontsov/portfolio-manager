@@ -5,18 +5,32 @@
 # Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Setup the project](#setup-the-project)
-3. [Run service in Dev](#run-service-in-dev)
-4. [Run service in Prod](#run-service-in-prod)
-5. [Testing](#testing)
-6. [API](#api)
-7. [Contact](#contact)
+2. [Project structure](#project-structure)
+3. [Setup the project](#setup-the-project)
+4. [Run service in Dev](#run-service-in-dev)
+5. [Run service in Prod](#run-service-in-prod)
+6. [Testing](#testing)
+7. [API](#api)
+8. [Contact](#contact)
 
 ## Prerequisites
 
-- Required software: Python, Docker, VSCode.
+- Required software: Python, Docker.
 - External services: PostgreSQL, Nginx, Gunicorn.
 - Additional tools, libraries: pipenv.
+
+## Project structure
+
+- `app` folder contains the application code
+- `config` folder includes configuration files for different stages
+- `docker` folder contains docker-related files to run services in Docker
+- `migrations` folder contains [alembic](https://alembic.sqlalchemy.org/en/latest/tutorial.html#the-migration-environment) database migration files
+- `nginx` folder contains [nginx](https://www.nginx.com/) files to run it in Docker. nginx is used in `prod` environment as a reverse proxy server alongside with [gunicorn](https://gunicorn.org/)
+- `tests` folder contains functional and unit tests for the project
+- `manage.py` script contains functions for running the service in Docker
+- `Pipfile` and `Pipfile.lock` files contain project dependencies and used by `pipenv`
+- `swagger.yml` file describes the API of the service
+- `wsgi.py` script is the main entry point of the service and is run by the web server.
 
 ## Setup the project
 
@@ -27,8 +41,8 @@ To setup the working environment:
     > pipenv install --dev
 3. Spawn a shell within the virtualenv using `pipenv`.
     > pipenv shell
-4. Open the project in VSCode.
-5. Select interpreter from the virualenv created in the step 3.
+4. Open the project in your favourite IDE.
+5. User the interpreter from the virualenv created in the step 3.
 
 ## Run service in Dev
 
@@ -68,6 +82,10 @@ You need to activate a virtualenv and execute the following command:
 
 1. Run tests
     > ./manage.py test
+
+It's also possible to pass multiple test expression parameters after the `test` command.
+
+Example: `./manage.py test test_duplicate_portfolio_create`
 
 ## API
 

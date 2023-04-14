@@ -12,7 +12,7 @@ services:
 
     web:
         build:
-            dockerfile: ./docker/Dockerfile.prod
+            dockerfile: ./Dockerfile.prod
         # It exposes 4 processes on the container address 0.0.0.0 loading
         # the object app from the wsgi.py file
         command: ["gunicorn", "--workers", "4", "--bind", "0.0.0.0", "wsgi:app"]
@@ -22,7 +22,7 @@ services:
             # By default Gunicorn exposes port 8000
             - 8000
         env_file:
-            - ./config/.prod.env
+            - ../config/.prod.env
         depends_on:
             - db
 
@@ -31,7 +31,7 @@ services:
         volumes:
             - postgres_data_prod:/var/lib/postgresql/data/
         env_file:
-            - ./config/.prod.env
+            - ../config/.prod.env
 
 volumes:
     postgres_data_prod:

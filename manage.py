@@ -4,6 +4,7 @@ import os
 import subprocess
 import signal
 import time
+import pathlib
 
 import click
 import psycopg2
@@ -37,7 +38,9 @@ def create_db(database_name):
 
 
 def docker_compose_cmdline(stage):
-    docker_compose_file = f"docker-compose.{stage}.yml"
+    projectdir = pathlib.Path(__file__).parent.resolve()
+    dockerdir = os.path.join(projectdir, "docker")
+    docker_compose_file = os.path.join(dockerdir, f"docker-compose.{stage}.yml")
 
     if not os.path.isfile(docker_compose_file):
         raise ValueError(f"The file {docker_compose_file} does not exist")
