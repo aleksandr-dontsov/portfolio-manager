@@ -39,8 +39,7 @@ def create_db(database_name):
 
 def docker_compose_cmdline(stage):
     projectdir = pathlib.Path(__file__).parent.resolve()
-    dockerdir = os.path.join(projectdir, "docker")
-    docker_compose_file = os.path.join(dockerdir, f"docker-compose.{stage}.yml")
+    docker_compose_file = os.path.join(projectdir, f"docker-compose.{stage}.yml")
 
     if not os.path.isfile(docker_compose_file):
         raise ValueError(f"The file {docker_compose_file} does not exist")

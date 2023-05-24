@@ -5,9 +5,10 @@ These tests use GET and POST methods to different URLs to check for the proper
 behavior of the auth views.
 """
 
+import pytest
 from conftest import registered_user, new_user
 from flask_security import current_user
-from app.extensions import se
+from app.extensions import security
 
 
 def test_signup_form(test_client):
@@ -29,49 +30,43 @@ def test_successful_signup(init_database, test_client):
     """
     response = test_client.post("/api/signup", json=new_user)
     assert response.status_code == 201
-    user = se.datastore.find_user(email=new_user["email"])
+    user = security.datastore.find_user(email=new_user["email"])
     assert user.email == new_user["email"]
     assert user.password == new_user["password"]
 
 
-def test_empty_email_signup(init_database, test_client):
-    """
-    GIVEN a Flask application configured for testing
-    WHEN the '/signup' page is posted to with empty email (POST)
-    THEN check that an error response is returned to the user
-    """
-    response = test_client.post(
-        "/api/signup", json=dict(email="", password=registered_user["password"])
-    )
-    assert response.status_code == 400
-    assert se.datastore.find_user(email="") is None
-
-
-def test_invalid_email_signup(init_database, test_client):
+@pytest.mark.parametrize(
+    "email",
+    [None, "", "no@domain", "domain.only", "@left.empty", "right.empty@"],
+)
+def test_invalid_email_signup(init_database, test_client, email):
     """
     GIVEN a Flask application configured for testing
     WHEN the '/signup' page is posted to with invalid email (POST)
     THEN check that an error response is returned to the user
     """
     response = test_client.post(
-        "/api/signup", json=dict(email=None, password=new_user["password"])
+        "/api/signup", json=dict(email=email, password=registered_user["password"])
     )
     assert response.status_code == 400
-    assert se.datastore.find_user(email="") is None
+    assert security.datastore.find_user(email=email) is None
 
 
-def test_empty_password_signup(init_database, test_client):
+@pytest.mark.parametrize(
+    "password",
+    [None, "", "short"],
+)
+def test_invalid_password_signup(init_database, test_client, password):
     """
     GIVEN a Flask application configured for testing
-    WHEN the '/signup' page is posted to with empty password (POST)
+    WHEN the '/signup' page is posted to with invalid password (POST)
     THEN check that an error response is returned to the user
     """
-
     response = test_client.post(
-        "/api/signup", json=dict(email=new_user["email"], password="")
+        "/api/signup", json=dict(email=registered_user["email"], password=password)
     )
     assert response.status_code == 400
-    assert se.datastore.find_user(email="") is None
+    assert security.datastore.find_user(email=registered_user["email"]) is None
 
 
 def test_duplicate_signup(register_user, test_client):
@@ -82,7 +77,7 @@ def test_duplicate_signup(register_user, test_client):
     """
     response = test_client.post("/api/signup", json=registered_user)
     assert response.status_code == 406
-    assert se.datastore.find_user(email=registered_user["email"])
+    assert security.datastore.find_user(email=registered_user["email"])
 
 
 def test_unauthenticated_logout(init_database, test_client):
@@ -174,5 +169,5 @@ def test_successfull_change_password(test_client, login_user):
     )
     assert response.status_code == 200
 
-    user = se.datastore.find_user(email=registered_user["email"])
+    user = security.datastore.find_user(email=registered_user["email"])
     assert user.password == new_user["password"]

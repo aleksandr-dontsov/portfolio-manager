@@ -1,6 +1,6 @@
 import enum
 
-from app.extensions import db, ma
+from app.extensions import db, marshmallow
 
 from marshmallow_enum import EnumField
 from marshmallow_sqlalchemy import fields
@@ -111,14 +111,14 @@ class Trade(db.Model):
     security = db.relationship("Security", back_populates="trades")
 
 
-class CurrencySchema(ma.SQLAlchemyAutoSchema):
+class CurrencySchema(marshmallow.SQLAlchemyAutoSchema):
     class Meta:
         model = Currency
         load_instance = True
         include_fk = False
 
 
-class TradeSchema(ma.SQLAlchemyAutoSchema):
+class TradeSchema(marshmallow.SQLAlchemyAutoSchema):
     trade_type = EnumField(TradeType, by_value=True)
 
     class Meta:
@@ -131,9 +131,9 @@ trade_schema = TradeSchema()
 trades_schema = TradeSchema(many=True)
 
 
-# Inherit from ma.SQLAlchemyAutoSchema
+# Inherit from marshmallow.SQLAlchemyAutoSchema
 # to find a SQLAlchemy model and a SQLAlchemy session
-class PortfolioSchema(ma.SQLAlchemyAutoSchema):
+class PortfolioSchema(marshmallow.SQLAlchemyAutoSchema):
     class Meta:
         # This is how Marshmallow finds attributes in the Portfolio
         # class and learns the types of those attributes

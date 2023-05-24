@@ -10,7 +10,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 # Init Marshmallow
-ma = Marshmallow()
+marshmallow = Marshmallow()
 
 # Init Flask-Security
-se = Security()
+security = Security()

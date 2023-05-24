@@ -4,7 +4,7 @@
 openapi: 3.0.0
 info:
     title: "Portfolio Manager REST API"
-    description: "An API about managing portfolios"
+    description: "API for managing financial portfolios"
     version: "1.0.0"
 
 servers:
@@ -17,6 +17,20 @@ servers:
 # that you can reference from other parts of your sepcification
 components:
     schemas:
+        Error:
+            # Data type of the schema
+            type: "object"
+            # Required properties
+            # Any property you define as required
+            # must exist in properties
+            required:
+                - status
+                - detail
+            properties:
+                status:
+                    type: "integer"
+                detail:
+                    type: "string"
         User:
             type: "object"
             required:
@@ -29,11 +43,7 @@ components:
                     type: "string"
 
         Currency:
-            # Data tyoe of the schema
             type: "object"
-            # Required properties
-            # Any property you define as required
-            # must exist in properties
             required:
                 - code
                 - name
@@ -91,6 +101,49 @@ components:
                 brokerage_fee:
                     type: "number"
 
+    responses:
+        BadRequest:
+            description: "Bad request"
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Error"
+        Unauthorized:
+            description: "Unathorized access"
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Error"
+        NotFound:
+            description: "Resource not found"
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Error"
+        InternalServerError:
+            description: "Internal server error"
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Error"
+        Success:
+            description: "Successfull operation"
+            content:
+                application/json:
+                    schema:
+                        type: "object"
+                        required:
+                            - id
+                            - email
+                            - message
+                        properties:
+                            id:
+                                type: "integer"
+                            email:
+                                type: "string"
+                            message:
+                                type: "string"
+
     parameters:
         portfolio_id:
             name: "portfolio_id"
@@ -126,7 +179,11 @@ paths:
                             $ref: "#/components/schemas/User"
             responses:
                 "201":
-                    description: "Successfully signed up user"
+                    $ref: "#/components/responses/Success"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
 
     /login:
         post:
@@ -144,7 +201,13 @@ paths:
                             $ref: "#/components/schemas/User"
             responses:
                 "200":
-                    description: "Successfully logged-in user"
+                    $ref: "#/components/responses/Success"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "404":
+                    $ref: "#/components/responses/NotFound"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
 
     /logout:
         post:
@@ -154,9 +217,13 @@ paths:
             summary: "Logout from the website"
             responses:
                 "200":
-                    description: "Successfully logged-out user"
+                    $ref: "#/components/responses/Success"
+                "401":
+                    $ref: "#/components/responses/Unauthorized"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
 
-    /change_password:
+    /change-password:
         post:
             operationId: "auth.change_password"
             tags:
@@ -180,7 +247,13 @@ paths:
                                     type: "string"
             responses:
                 "200":
-                    description: "Successfully changed password"
+                    $ref: "#/components/responses/Success"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "401":
+                    $ref: "#/components/responses/Unauthorized"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
 
     # The relative URL of your API endpoint
     /portfolios:
@@ -198,6 +271,10 @@ paths:
             responses:
                 "200":
                     description: "Successfully read portfolios list"
+                    content:
+                        application/json:
+                            schema:
+                                type: "array"
 
         post:
             operationId: "portfolios.create"
@@ -218,6 +295,10 @@ paths:
                 # was created as a result
                 "201":
                     description: "Successfully created portfolio"
+                    content:
+                        application/json:
+                            schema:
+                                type: "object"
 
     /portfolios/{portfolio_id}:
         get:
@@ -230,6 +311,10 @@ paths:
             responses:
                 "200":
                     description: "Successfully read portfolio"
+                    content:
+                        application/json:
+                            schema:
+                                type: "object"
 
         put:
             operationId: "portfolios.update"
@@ -238,15 +323,19 @@ paths:
             summary: "Update a portfolio"
             parameters:
                 - $ref: "#/components/parameters/portfolio_id"
-            responses:
-                "200":
-                    description: "Successfully updated portfolio"
             requestBody:
                 x-body-name: "portfolio"
                 content:
                     application/json:
                         schema:
                             $ref: "#/components/schemas/Portfolio"
+            responses:
+                "200":
+                    description: "Successfully updated portfolio"
+                    content:
+                        application/json:
+                            schema:
+                                type: "object"
 
         delete:
             operationId: "portfolios.delete"
@@ -270,6 +359,10 @@ paths:
             responses:
                 "200":
                     description: "Successfully read trades list"
+                    content:
+                        application/json:
+                            schema:
+                                type: "array"
 
         post:
             operationId: "trades.create"
@@ -292,6 +385,10 @@ paths:
                 # was created as a result
                 "201":
                     description: "Successfully created trade"
+                    content:
+                        application/json:
+                            schema:
+                                type: "object"
 
     /portfolios/{portfolio_id}/trades/{trade_id}:
         put:
@@ -302,15 +399,19 @@ paths:
             parameters:
                 - $ref: "#/components/parameters/portfolio_id"
                 - $ref: "#/components/parameters/trade_id"
-            responses:
-                "200":
-                    description: "Successfully updated trade"
             requestBody:
                 x-body-name: "trade_params"
                 content:
                     application/json:
                         schema:
                             $ref: "#/components/schemas/Trade"
+            responses:
+                "200":
+                    description: "Successfully updated trade"
+                    content:
+                        application/json:
+                            schema:
+                                type: "object"
 
         delete:
             operationId: "trades.delete"

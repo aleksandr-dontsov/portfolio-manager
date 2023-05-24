@@ -4,7 +4,7 @@ services:
     web:
         build:
             context: .
-            dockerfile: ./Dockerfile.dev
+            dockerfile: ./docker/Dockerfile.dev
         # 127.0.0.1 is a default value.
         # Here we need to bind our service to the 0.0.0.0
         # to make it accessible to machines other than docker.
@@ -12,11 +12,13 @@ services:
         # from the docker localhost
         command: ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
         volumes:
-            - ..:/usr/src/app/
+            - .:/usr/src/app/
         ports:
             - "5000:5000"
         env_file:
-            - ../config/.dev.env
+            - ./config/.dev.env
+        depends_on:
+            - db
 
     db:
         image: postgres:13-alpine
@@ -24,7 +26,8 @@ services:
         volumes:
             - postgres_data:/var/lib/postgresql/data/
         env_file:
-            - ../config/.dev.env
+            - ./config/.dev.env
+
 
 volumes:
     postgres_data:

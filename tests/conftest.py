@@ -6,7 +6,7 @@ from flask_security import current_user
 
 from manage import create_db
 from app import create_app
-from app.extensions import db, se
+from app.extensions import db, security
 from app.models.portfolio import Currency, Portfolio, Security, Trade
 
 registered_user = {"email": "registered.user@gmail.com", "password": "Registered.user1"}
@@ -63,11 +63,11 @@ def init_database(test_client):
     db.create_all()
 
     # Create roles
-    se.datastore.find_or_create_role(
+    security.datastore.find_or_create_role(
         name="admin",
         permissions={"admin-read", "admin-write", "user-read", "user-write"},
     )
-    se.datastore.find_or_create_role(
+    security.datastore.find_or_create_role(
         name="user", permissions={"user-read", "user-write"}
     )
 
@@ -76,8 +76,8 @@ def init_database(test_client):
         db.session.add(Currency(**currency))
 
     # Create securities
-    for security in securities:
-        db.session.add(Security(**security))
+    for sec in securities:
+        db.session.add(Security(**sec))
 
     db.session.commit()
 
@@ -92,7 +92,7 @@ def init_database(test_client):
 
 @pytest.fixture(scope="function")
 def register_user(init_database):
-    se.datastore.create_user(**registered_user, roles=["user"])
+    security.datastore.create_user(**registered_user, roles=["user"])
     db.session.commit()
 
 
@@ -113,7 +113,7 @@ def create_portfolio(login_user):
 
 @pytest.fixture(scope="function")
 def create_new_user_portfolio(test_client):
-    user = se.datastore.create_user(**new_user, roles=["user"])
+    user = security.datastore.create_user(**new_user, roles=["user"])
     db.session.add(Portfolio(**new_portfolio, user=user))
     db.session.commit()
 
