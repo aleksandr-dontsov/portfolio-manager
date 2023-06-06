@@ -1,9 +1,11 @@
 version: '3.8'
 
 services:
-    web:
+    backend:
         build:
-            context: .
+            # Dockerfile needs an access to the files in the parent folder
+            # that's why the context should be ./backed rather than ./backend/docker
+            context: ./backend
             dockerfile: ./docker/Dockerfile.dev
         # 127.0.0.1 is a default value.
         # Here we need to bind our service to the 0.0.0.0
@@ -12,11 +14,11 @@ services:
         # from the docker localhost
         command: ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
         volumes:
-            - .:/usr/src/app/
+            - ./backend:/usr/src/app:rw
         ports:
             - "5000:5000"
         env_file:
-            - ./config/.dev.env
+            - ./backend/config/.dev.env
         depends_on:
             - db
 
@@ -26,7 +28,20 @@ services:
         volumes:
             - postgres_data:/var/lib/postgresql/data/
         env_file:
-            - ./config/.dev.env
+            - ./backend/config/.dev.env
+
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: ./docker/Dockerfile.dev
+        command: ["npm", "start"]
+        volumes:
+            - ./frontend:/app:rw
+        ports:
+            - "3000:3000"
+        depends_on:
+            - backend
+
 
 
 volumes:

@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
     nginx:
-        build: ./nginx
+        build:
+            context: backend
+            dockerfile: ./nginx/Dockerfile
         volumes:
             - static_volume:/home/app/web/app/static/
         ports:
@@ -12,8 +14,8 @@ services:
 
     web:
         build:
-            context: .
-            dockerfile: ./docker/Dockerfile.prod
+            context: backend
+            dockerfile: ./docker/Dockerfile.dev
         # It exposes 4 processes on the container address 0.0.0.0 loading
         # the object app from the wsgi.py file
         command: ["gunicorn", "--workers", "4", "--bind", "0.0.0.0", "wsgi:app"]
