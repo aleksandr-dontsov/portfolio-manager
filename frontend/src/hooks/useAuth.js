@@ -1,30 +1,32 @@
 import { createContext, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocalStorage } from "./useLocalStorage";
-import { login } from "../services/auth";
+import { api } from "../api/api";
 
 // 1. create context
 // Context lets the parent component make some information
 // available to other components in the tree below without
 // passing this information explicitly through props
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useLocalStorage("token", null);
+    // TODO: Fix the problem with isLoggedIn stale value
+    const [isLoggedIn, setIsLoggedIn] = useLocalStorage("isLoggedIn", false);
     const navigate = useNavigate();
 
     // call this function when you want to authenticate the user
-    const handleLogin = async () => {
-        console.log("login");
-        const token = await login();
-        setToken(token);
+    const handleLogin = async (email, password) => {
+        await api.post("/api/login", {
+            email,
+            password
+        });
+        setIsLoggedIn(true);
         navigate("/portfolios");
     }
 
     // call this function to sign out logged in user
     const handleLogout = () => {
-        console.log("logout");
-        setToken(null);
+        setIsLoggedIn(false);
         // replace: true will be used by navigation to replace
         // the current entry in the history stack instead of adding a new one
         navigate("/", { replace: true });
@@ -33,11 +35,12 @@ export const AuthProvider = ({ children }) => {
     // useMemo is a hook that lets one cache the result of a calculation between re-renders
     const value = useMemo(
         () => ({
-            token,
+            isLoggedIn,
+            setIsLoggedIn,
             onLogin: handleLogin,
             onLogout: handleLogout,
         }),
-        [token]
+        [isLoggedIn]
     );
 
     // 3. provide context

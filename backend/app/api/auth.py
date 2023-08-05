@@ -1,110 +1,116 @@
-from flask_security import (
-    hash_password,
-    verify_password,
-    login_user,
-    logout_user,
-    auth_required,
-    permissions_required,
-    current_user,
-)
-from app.extensions import security
+from app.extensions import db, bcrypt
 from app.common import make_error_response
-from email_validator import EmailNotValidError
+from app.models.user import User
+from app.config import Config
+from email_validator import validate_email, EmailNotValidError
+from password_strength import PasswordPolicy
+from flask import jsonify
+from flask_jwt_extended import (
+    create_access_token,
+    get_current_user,
+    jwt_required,
+    set_access_cookies,
+)
 
 
-def make_success_response(id: int, email: str, message: str, status=200):
-    return {"id": id, "email": email, "message": message}, status
+def make_success_response(id: int, email: str, message: str):
+    return jsonify({"id": id, "email": email, "message": message})
+
+
+def get_user_by_email(email: str):
+    return db.session.execute(db.select(User).filter_by(email=email)).scalar()
+
+
+def validate_password(password: str):
+    password_policy = PasswordPolicy.from_names(
+        length=Config.MIN_PASSWORD_LENGTH, uppercase=1, special=1
+    )
+    result = password_policy.test(password)
+    if result:
+        raise ValueError(result)
 
 
 def signup(credentials):
     try:
+        # Ensure a user doesn't exist
         email = credentials["email"]
-        existing_user = security.datastore.find_user(email=email)
+        existing_user = get_user_by_email(email)
         if existing_user is not None:
             return make_error_response(
                 400, f"User with email {credentials['email']} already exists"
             )
         # Validate email
         try:
-            email = security._mail_util.normalize(email)
+            email = validate_email(email).normalized
         except EmailNotValidError as error:
             return make_error_response(400, f"{error}")
         # Validate password
-        errors, password = security._password_util.validate(
-            credentials["password"], True
-        )
-        if errors is not None:
-            error = ".".join(errors)
+        password = credentials["password"]
+        try:
+            validate_password(password)
+        except Exception as error:
             return make_error_response(400, f"{error}")
-        # Save user to db
-        user = security.datastore.create_user(
-            email=email, password=hash_password(password), roles=["user"]
+        # Save a user to db
+        password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
+        new_user = User(email=email, password_hash=password_hash)
+        db.session.add(new_user)
+        db.session.commit()
+        return make_success_response(
+            new_user.id, new_user.email, "User successfully signed up"
         )
-        security.datastore.db.session.commit()
-        return make_success_response(user.id, user.email, "User successfully signed up")
     except Exception as error:
         return make_error_response(500, f"{error}")
 
 
 def login(credentials):
     try:
-        user = security.datastore.find_user(email=credentials["email"])
+        # Validate email
+        email = credentials["email"]
+        try:
+            email = validate_email(email).normalized
+        except EmailNotValidError as error:
+            return make_error_response(400, f"{error}")
+        # Get a user
+        user = get_user_by_email(email)
         if user is None:
-            return make_error_response(
-                404, f"User with email {credentials['email']} not found"
-            )
+            return make_error_response(404, f"User with email {email} not found")
         # Check a password against a given salted and hashed password value
-        if not verify_password(
-            password=credentials["password"], password_hash=user.password
-        ):
-            return make_error_response(
-                400, f"Wrong password for {credentials['email']}"
-            )
-        # Remember flag prevents a user from being logged out
-        # when the browser is closed
-        if not login_user(user=user, remember=True):
-            return make_error_response(
-                400, f"Unable to login a user with email {credentials['email']}"
-            )
-        # TODO validate value of the next parameter, otherwise
-        # application will be vulnerable to open redirects
-        # https://web.archive.org/web/20120517003641/http://flask.pocoo.org/snippets/62/
-        return make_success_response(user.id, user.email, "User successfully logged in")
+        if not user.check_password(credentials["password"]):
+            return make_error_response(400, f"Wrong password for {email}")
+        # Create a JWT
+        access_token = create_access_token(identity=user)
+        response = make_success_response(
+            user.id, user.email, "User successfully logged in"
+        )
+        set_access_cookies(response=response, encoded_access_token=access_token)
+        return response
     except Exception as error:
         return make_error_response(500, f"{error}")
 
 
-@auth_required("session")
-@permissions_required("user-read")
-def logout():
-    try:
-        id = current_user.id
-        email = current_user.email
-        logout_user()
-        return make_success_response(id, email, "User successfully logged out")
-    except Exception as error:
-        return make_error_response(500, f"{error}")
-
-
-@auth_required("session")
-@permissions_required("user-read")
+@jwt_required()
 def change_password(passwords):
     try:
+        current_user = get_current_user()
         # Verify a current password
-        if not verify_password(
-            password=passwords["current_password"], password_hash=current_user.password
-        ):
+        current_password = passwords["current_password"]
+        if not current_user.check_password(current_password):
             return make_error_response(400, f"Wrong password for {current_user.email}")
+        new_password = passwords["new_password"]
+        # Check if new password equals to the current one
+        if new_password == current_password:
+            return make_error_response(
+                400, "New password cannot be the same as old password"
+            )
         # Validate a new password
-        errors, password = security._password_util.validate(
-            passwords["new_password"], True
-        )
-        if errors is not None:
-            error = ".".join(errors)
+        try:
+            validate_password(new_password)
+        except Exception as error:
             return make_error_response(400, f"{error}")
-        current_user.password = hash_password(password)
-        security.datastore.db.session.merge(current_user)
-        security.datastore.db.session.commit()
+        # Set a new password
+        new_password_hash = bcrypt.generate_password_hash(new_password).decode("utf-8")
+        current_user.password_hash = new_password_hash
+        db.session.commit()
         return make_success_response(
             current_user.id,
             current_user.email,

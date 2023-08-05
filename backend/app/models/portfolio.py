@@ -68,8 +68,8 @@ class Security(db.Model):
 
 
 class TradeType(enum.Enum):
-    buy = "buy"
-    sell = "sell"
+    buy = "BUY"
+    sell = "SELL"
 
 
 class Trade(db.Model):
@@ -111,6 +111,14 @@ class Trade(db.Model):
     security = db.relationship("Security", back_populates="trades")
 
 
+class SecuritySchema(marshmallow.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Security
+        load_instance = True
+        include_fk = False
+        include_relationships = False
+
+
 class CurrencySchema(marshmallow.SQLAlchemyAutoSchema):
     class Meta:
         model = Currency
@@ -119,12 +127,14 @@ class CurrencySchema(marshmallow.SQLAlchemyAutoSchema):
 
 
 class TradeSchema(marshmallow.SQLAlchemyAutoSchema):
-    trade_type = EnumField(TradeType, by_value=True)
-
     class Meta:
         model = Trade
         load_instance = True
         include_fk = True
+        include_relationships = True
+
+    trade_type = EnumField(TradeType, by_value=True)
+    security = fields.Nested(SecuritySchema, many=False)
 
 
 trade_schema = TradeSchema()
@@ -144,9 +154,10 @@ class PortfolioSchema(marshmallow.SQLAlchemyAutoSchema):
         # Support foreign keys
         include_fk = True
         # Add related objects to the schema
-        include_relationships = False
+        include_relationships = True
 
     trades = fields.Nested(TradeSchema, many=True)
+    currency = fields.Nested(CurrencySchema, many=False)
 
 
 portfolio_schema = PortfolioSchema()

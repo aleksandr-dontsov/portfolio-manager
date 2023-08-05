@@ -1,16 +1,16 @@
-"""Initial models
+"""empty message
 
-Revision ID: c3dc48036b2e
+Revision ID: 1259f7b97372
 Revises:
-Create Date: 2023-03-22 11:23:40.278984
+Create Date: 2023-07-01 11:32:03.692263
 
 """
 from alembic import op
 import sqlalchemy as sa
-import flask_security
+
 
 # revision identifiers, used by Alembic.
-revision = "c3dc48036b2e"
+revision = "1259f7b97372"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -25,21 +25,6 @@ def upgrade():
         sa.Column("name", sa.String(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    role_table = op.create_table(
-        "role",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("name", sa.String(length=80), nullable=False),
-        sa.Column("description", sa.String(length=255), nullable=True),
-        sa.Column("permissions", flask_security.datastore.AsaList(), nullable=True),
-        sa.Column(
-            "update_datetime",
-            sa.DateTime(),
-            server_default=sa.text("now()"),
-            nullable=False,
-        ),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("name"),
-    )
     security_table = op.create_table(
         "security",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -49,45 +34,21 @@ def upgrade():
     )
     op.create_table(
         "user",
-        sa.Column("fs_webauthn_user_handle", sa.String(length=64), nullable=True),
-        sa.Column(
-            "mf_recovery_codes", flask_security.datastore.AsaList(), nullable=True
-        ),
-        sa.Column("password", sa.String(length=255), nullable=True),
-        sa.Column("us_phone_number", sa.String(length=128), nullable=True),
-        sa.Column("username", sa.String(length=255), nullable=True),
-        sa.Column("us_totp_secrets", sa.Text(), nullable=True),
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("email", sa.String(length=255), nullable=False),
-        sa.Column("active", sa.Boolean(), nullable=False),
-        sa.Column("fs_uniquifier", sa.String(length=64), nullable=False),
-        sa.Column("confirmed_at", sa.DateTime(), nullable=True),
-        sa.Column("last_login_at", sa.DateTime(), nullable=True),
-        sa.Column("current_login_at", sa.DateTime(), nullable=True),
-        sa.Column("last_login_ip", sa.String(length=64), nullable=True),
-        sa.Column("current_login_ip", sa.String(length=64), nullable=True),
-        sa.Column("login_count", sa.Integer(), nullable=True),
-        sa.Column("tf_primary_method", sa.String(length=64), nullable=True),
-        sa.Column("tf_totp_secret", sa.String(length=255), nullable=True),
-        sa.Column("tf_phone_number", sa.String(length=128), nullable=True),
+        sa.Column("email", sa.String(length=100), server_default="", nullable=False),
+        sa.Column("email_confirmed_at", sa.DateTime(), nullable=True),
+        sa.Column("password_hash", sa.String(length=128), nullable=True),
         sa.Column(
-            "create_datetime",
-            sa.DateTime(),
-            server_default=sa.text("now()"),
-            nullable=False,
+            "first_name", sa.String(length=120), server_default="", nullable=False
         ),
         sa.Column(
-            "update_datetime",
-            sa.DateTime(),
-            server_default=sa.text("now()"),
-            nullable=False,
+            "second_name", sa.String(length=120), server_default="", nullable=False
         ),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=False),
+        sa.Column("is_active", sa.Boolean(), server_default="1", nullable=False),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("email"),
-        sa.UniqueConstraint("fs_uniquifier"),
-        sa.UniqueConstraint("fs_webauthn_user_handle"),
-        sa.UniqueConstraint("us_phone_number"),
-        sa.UniqueConstraint("username"),
     )
     op.create_table(
         "portfolio",
@@ -116,19 +77,6 @@ def upgrade():
             ["user.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_table(
-        "roles_users",
-        sa.Column("user_id", sa.Integer(), nullable=True),
-        sa.Column("role_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["role_id"],
-            ["role.id"],
-        ),
-        sa.ForeignKeyConstraint(
-            ["user_id"],
-            ["user.id"],
-        ),
     )
     op.create_table(
         "trade",
@@ -170,7 +118,6 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     # ### end Alembic commands ###
-
     # ### seed database ###
     op.bulk_insert(
         currency_table,
@@ -190,26 +137,12 @@ def upgrade():
         ],
     )
 
-    op.bulk_insert(
-        role_table,
-        [
-            {
-                "id": 1,
-                "name": "admin",
-                "permissions": ["admin-read", "admin-write", "user-read", "user-write"],
-            },
-            {"id": 2, "name": "user", "permissions": ["user-read", "user-write"]},
-        ],
-    )
-
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table("trade")
-    op.drop_table("roles_users")
     op.drop_table("portfolio")
     op.drop_table("user")
     op.drop_table("security")
-    op.drop_table("role")
     op.drop_table("currency")
     # ### end Alembic commands ###

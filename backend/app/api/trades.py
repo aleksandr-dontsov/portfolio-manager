@@ -1,14 +1,14 @@
 from datetime import datetime
-from flask_security import auth_required, permissions_required
 from app.extensions import db
 from app.common import make_error_response, PortmanError
-from app.api.portfolios import get_portfolio
+from app.api.portfolios import get_portfolio_by_id
 from app.models.portfolio import (
     Trade,
     TradeType,
     trade_schema,
     trades_schema,
 )
+from flask_jwt_extended import jwt_required
 
 
 def get_trade(portfolio_id, trade_id):
@@ -38,11 +38,23 @@ def validate_trade_params(params):
         raise PortmanError(400, "Trade brokerage fee cannot be a negative number")
 
 
-@auth_required("session")
-@permissions_required("user-read")
+@jwt_required()
+def read_one(portfolio_id, trade_id):
+    try:
+        get_portfolio_by_id(portfolio_id)
+        trade = get_trade(portfolio_id, trade_id)
+        return trade_schema.dump(trade), 200
+    except PortmanError as error:
+        return make_error_response(error.status, error.detail)
+    except Exception as error:
+        db.session.rollback()
+        return make_error_response(500, f"Cannot get trades, error: {error}")
+
+
+@jwt_required()
 def read_all(portfolio_id):
     try:
-        get_portfolio(portfolio_id)
+        get_portfolio_by_id(portfolio_id)
         trades = db.session.scalars(
             db.select(Trade).filter_by(portfolio_id=portfolio_id)
         )
@@ -54,12 +66,11 @@ def read_all(portfolio_id):
         return make_error_response(500, f"Cannot get trades, error: {error}")
 
 
-@auth_required("session")
-@permissions_required("user-write")
+@jwt_required()
 def create(portfolio_id, trade_params):
     try:
         validate_trade_params(trade_params)
-        portfolio = get_portfolio(portfolio_id)
+        portfolio = get_portfolio_by_id(portfolio_id)
         trade_params["portfolio_id"] = portfolio_id
         new_trade = trade_schema.load(trade_params, session=db.session)
         portfolio.trades.append(new_trade)
@@ -72,11 +83,10 @@ def create(portfolio_id, trade_params):
         return make_error_response(500, f"Cannot create a trade: {error}")
 
 
-@auth_required("session")
-@permissions_required("user-write")
+@jwt_required()
 def update(portfolio_id, trade_id, trade_params):
     try:
-        get_portfolio(portfolio_id)
+        get_portfolio_by_id(portfolio_id)
         validate_trade_params(trade_params)
         trade_params["portfolio_id"] = portfolio_id
         new_trade = trade_schema.load(trade_params, session=db.session)
@@ -98,11 +108,10 @@ def update(portfolio_id, trade_id, trade_params):
         return make_error_response(500, f"Cannot update a trade: {error}")
 
 
-@auth_required("session")
-@permissions_required("user-write")
+@jwt_required()
 def delete(portfolio_id, trade_id):
     try:
-        get_portfolio(portfolio_id)
+        get_portfolio_by_id(portfolio_id)
         trade = get_trade(portfolio_id, trade_id)
         db.session.delete(trade)
         db.session.commit()
