@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-    backend:
+    portfolio-manager:
         build:
             # Dockerfile needs an access to the files in the parent folder
-            # that's why the context should be ./backed rather than ./backend/docker
-            context: ./backend
+            # that's why the context should be ./backend/portfolio-manager rather than ./backend/docker
+            context: ./backend/portfolio-manager
             dockerfile: ./docker/Dockerfile.dev
         # 127.0.0.1 is a default value.
         # Here we need to bind our service to the 0.0.0.0
@@ -14,11 +14,11 @@ services:
         # from the docker localhost
         command: ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
         volumes:
-            - ./backend:/usr/src/app:rw
+            - ./backend/portfolio-manager:/usr/src/app:rw
         ports:
             - "5000:5000"
         env_file:
-            - ./backend/config/.dev.env
+            - ./backend/portfolio-manager/config/.dev.env
         depends_on:
             - db
 
@@ -28,7 +28,7 @@ services:
         volumes:
             - postgres_data:/var/lib/postgresql/data/
         env_file:
-            - ./backend/config/.dev.env
+            - ./backend/portfolio-manager/config/.dev.env
 
     frontend:
         build:
@@ -40,7 +40,7 @@ services:
         ports:
             - "3000:3000"
         depends_on:
-            - backend
+            - portfolio-manager
 
 
 
