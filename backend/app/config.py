@@ -44,28 +44,40 @@ class Config(object):
         "SECURITY_PASSWORD_SALT", "BAD_SECURITY_PASSWORD_SALT"
     )
 
-    # Enables the change password endpoint
-    SECURITY_CHANGEABLE = True
+    # The secret key is used to decode/encode JWTs when using a symmetric signing algorithm
+    # If this value is not set, SECRET_KEY value will be used instead
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "BAD_JWT_SECRET_KEY")
 
-    # Specifies the password change url
-    SECURITY_CHANGE_URL = "/api/change_password"
+    # Specifies for how long an access token should be valid before it expires
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=60)
 
-    # Returns 401 code and static html for authentication failures rather than 302 code
-    SECURITY_BACKWARDS_COMPAT_UNAUTHN = True
+    # Specifies where to look for a JWT when processing a request
+    # Benefits of using cookies over headers:
+    # 1. Can be configured to send only over HTTPS
+    # 2. Prevents XSS attacks from being able to steal the JTW,
+    #    because they are stored in http-only cookie
+    # 3. Implicit refresh of JWTs that are close to expiring
+    JWT_TOKEN_LOCATION = ["cookies"]
 
-    # Restricts the "Remember Me" cookie to first-party or same-site context
-    REMEMBER_COOKIE_SAMESITE = "Strict"
+    # Controls if the secure web flag should be placed on cookies created by this extenstion.
+    # If a cookie is markeds as secure it will only be sent via HTTPS
+    JWT_COOKIE_SECURE = False
 
-    # The amount of time before the cookie expires
-    REMEMBER_COOKIE_DURATION = timedelta(hours=12)
+    # Controls if the cookies are configured as session cookies,
+    # which are deleted once a browser is closed
+    JWT_SESSION_COOKIE = True
 
-    # Prevents sending cookies with all external requests which means
-    # that cookies will be sent only from the origin for which it was set for
-    SESSION_COOKIE_SAMESITE = "Strict"
+    # Controls if the CSRF double submit token will be stored in additional cookies.
+    JWT_CSRF_IN_COOKIES = True
+
+    # A minimum password length
+    MIN_PASSWORD_LENGTH = 8
 
 
 class ProductionConfig(Config):
     """Production configuration"""
+
+    JWT_COOKIE_SECURE = True
 
 
 class DevelopmentConfig(Config):

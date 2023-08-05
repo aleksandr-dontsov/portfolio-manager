@@ -12,10 +12,12 @@ swagger-ui-bundle = "*"
 marshmallow-enum = "*"
 flask-marshmallow = {extras = ["sqlalchemy"], version = "*"}
 sqlalchemy = "==2.0.1"
-flask-login = "*"
-flask-security-too = {extras = ["common", "fsqla"], version = "*"}
 flask-migrate = "*"
 gunicorn = "*"
+flask-bcrypt = "*"
+flask-jwt-extended = "*"
+email-validator = "*"
+password-strength = "*"
 
 [dev-packages]
 pytest = "*"

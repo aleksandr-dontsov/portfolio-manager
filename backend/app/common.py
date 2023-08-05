@@ -1,3 +1,6 @@
+from flask import jsonify
+
+
 class PortmanError(Exception):
     """Base class for exceptions in Portfolio Manager App."""
 
@@ -11,4 +14,4 @@ class PortmanError(Exception):
 
 
 def make_error_response(status: int, detail: str):
-    return {"status": status, "detail": detail}, status
+    return jsonify({"detail": detail}), status

@@ -1,7 +1,8 @@
-from flask_security import auth_required, permissions_required, current_user
 from app.extensions import db
 from app.common import make_error_response, PortmanError
 from app.models.portfolio import Portfolio, portfolio_schema, portfolios_schema
+from flask_jwt_extended import get_current_user, jwt_required
+from sqlalchemy import asc
 
 MAX_PORTFOLIO_NAME_LENGTH = 150
 
@@ -20,29 +21,39 @@ def validate_portfolio_params(portfolio):
         )
 
 
-def get_portfolio(portfolio_id):
+def get_portfolio_by_id(portfolio_id):
     portfolio = db.session.execute(
         db.select(Portfolio).filter_by(id=portfolio_id)
     ).scalar()
     if not portfolio:
         raise PortmanError(404, f"Portfolio with id {portfolio_id} not found")
-    if portfolio.user_id is not current_user.id:
+    if portfolio.user_id != get_current_user().id:
         raise PortmanError(
-            403, f"Portfolio with id {portfolio_id} does not belong to the given user"
+            403, f"Portfolio with id {portfolio_id} doesn't belong to the current user"
         )
     return portfolio
 
 
-@auth_required("session")
-@permissions_required("user-read")
+def get_portfolio_by_name(portfolio_name):
+    user_id = get_current_user().id
+    portfolio = db.session.execute(
+        db.select(Portfolio).filter_by(user_id=user_id, name=portfolio_name)
+    ).scalar()
+    if not portfolio:
+        raise PortmanError(404, f"Portfolio with name '{portfolio_name}' not found")
+    return portfolio
+
+
+@jwt_required()
 def read_all():
     # Using <Model>.query is an old interface and considered legacy in SQLAlchemy.
     # Session.execute is a preferable way
     try:
+        current_user = get_current_user()
         portfolios = db.session.execute(
             db.select(Portfolio)
             .filter_by(user_id=current_user.id)
-            .order_by(Portfolio.name)
+            .order_by(asc(Portfolio.created_at))
         ).scalars()
         return portfolios_schema.dump(portfolios), 200
     except Exception as error:
@@ -50,11 +61,10 @@ def read_all():
         return make_error_response(500, f"Cannot get portfolio entries, error: {error}")
 
 
-@auth_required("session")
-@permissions_required("user-read")
+@jwt_required()
 def read_one(portfolio_id):
     try:
-        return portfolio_schema.dump(get_portfolio(portfolio_id)), 200
+        return portfolio_schema.dump(get_portfolio_by_id(portfolio_id)), 200
     except PortmanError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
@@ -64,10 +74,10 @@ def read_one(portfolio_id):
         )
 
 
-@auth_required("session")
-@permissions_required("user-write")
+@jwt_required()
 def create(portfolio):
     try:
+        current_user = get_current_user()
         validate_portfolio_params(portfolio)
         existing_portfolio = db.session.execute(
             db.select(Portfolio).filter_by(
@@ -90,18 +100,28 @@ def create(portfolio):
         make_error_response(500, f"Cannot create a portfolio entry: {error}")
 
 
-@auth_required("session")
-@permissions_required("user-write")
+@jwt_required()
 def update(portfolio_id, portfolio):
     try:
+        current_user = get_current_user()
         validate_portfolio_params(portfolio)
+        updated_portfolio = get_portfolio_by_id(portfolio_id)
+        existing_portfolio = db.session.execute(
+            db.select(Portfolio).filter_by(
+                user_id=current_user.id, name=portfolio["name"]
+            )
+        ).scalar()
+        if existing_portfolio and existing_portfolio.id != portfolio_id:
+            raise PortmanError(
+                400, f"Portfolio with a name '{portfolio['name']}' already exists"
+            )
+
         portfolio["user_id"] = current_user.id
         new_portfolio = portfolio_schema.load(portfolio, session=db.session)
-        existing_portfolio = get_portfolio(portfolio_id)
-        existing_portfolio.name = new_portfolio.name
-        existing_portfolio.currency_id = new_portfolio.currency_id
+        updated_portfolio.name = new_portfolio.name
+        updated_portfolio.currency_id = new_portfolio.currency_id
         db.session.commit()
-        return portfolio_schema.dump(existing_portfolio), 200
+        return portfolio_schema.dump(updated_portfolio), 200
     except PortmanError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
@@ -109,11 +129,10 @@ def update(portfolio_id, portfolio):
         make_error_response(500, f"Cannot update a portfolio entry: {error}")
 
 
-@auth_required("session")
-@permissions_required("user-write")
+@jwt_required()
 def delete(portfolio_id):
     try:
-        portfolio = get_portfolio(portfolio_id)
+        portfolio = get_portfolio_by_id(portfolio_id)
         db.session.delete(portfolio)
         db.session.commit()
         return "", 204

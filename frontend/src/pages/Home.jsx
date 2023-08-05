@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import chartImage from '../assets/chart.svg';
 
-export default function MainPage() {
+export default function Home() {
     return (
         <main className="main">
             <h1>The Simplest Financial Portfolio Manager</h1>
