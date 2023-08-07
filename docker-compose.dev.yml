@@ -22,6 +22,20 @@ services:
         depends_on:
             - db
 
+    market-data-fetcher:
+        build:
+            context: ./backend/market-data-fetcher
+            dockerfile: ./docker/Dockerfile.dev
+        # command: ["flask", "run", "--host", "0.0.0.0", "--port", "5001"]
+        command: ["flask", "run"]
+        volumes:
+            - ./backend/market-data-fetcher:/usr/src/app:rw
+        env_file:
+            - ./backend/market-data-fetcher/config/.dev.env
+        depends_on:
+            - portfolio-manager
+
+
     db:
         image: postgres:13-alpine
         command: ["postgres", "-c", "log_statement=all"]
