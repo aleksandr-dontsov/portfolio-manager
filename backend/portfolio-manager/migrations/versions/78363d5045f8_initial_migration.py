@@ -1,8 +1,8 @@
-"""empty message
+"""Initial migration
 
-Revision ID: 1259f7b97372
+Revision ID: 78363d5045f8
 Revises:
-Create Date: 2023-07-01 11:32:03.692263
+Create Date: 2023-08-08 07:17:35.937651
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "1259f7b97372"
+revision = "78363d5045f8"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,12 +24,18 @@ def upgrade():
         sa.Column("code", sa.CHAR(length=3), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("code"),
     )
-    security_table = op.create_table(
+    op.create_table(
         "security",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("isin", sa.String(length=12), nullable=False),
         sa.Column("symbol", sa.String(length=5), nullable=False),
+        sa.Column("name", sa.String(), nullable=False),
+        sa.Column("exchange", sa.String(), nullable=False),
+        sa.Column(
+            "asset_type", sa.Enum("stock", "etf", name="assettype"), nullable=False
+        ),
+        sa.Column("is_active", sa.Boolean(), server_default="1", nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -118,6 +124,7 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     # ### end Alembic commands ###
+
     # ### seed database ###
     op.bulk_insert(
         currency_table,
@@ -125,15 +132,6 @@ def upgrade():
             {"id": 1, "code": "USD", "name": "Unites States dollar"},
             {"id": 2, "code": "EUR", "name": "Euro"},
             {"id": 3, "code": "RUB", "name": "Russian Ruble"},
-        ],
-    )
-
-    op.bulk_insert(
-        security_table,
-        [
-            {"id": 1, "isin": "US4592001014", "symbol": "IBM"},
-            {"id": 2, "isin": "US88160R1014", "symbol": "TSLA"},
-            {"id": 3, "isin": "US0378331005", "symbol": "AAPL"},
         ],
     )
 
