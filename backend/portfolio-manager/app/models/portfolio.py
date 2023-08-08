@@ -10,7 +10,7 @@ class Currency(db.Model):
     __tablename__ = "currency"
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.CHAR(3), nullable=False)
+    code = db.Column(db.CHAR(3), nullable=False, unique=True)
     name = db.Column(db.String, nullable=False)
 
     portfolios = db.relationship(
@@ -55,12 +55,20 @@ class Portfolio(db.Model):
     )
 
 
+class AssetType(enum.Enum):
+    stock = "STOCK"
+    etf = "ETF"
+
+
 class Security(db.Model):
     __tablename__ = "security"
 
     id = db.Column(db.Integer, primary_key=True)
-    isin = db.Column(db.String(12), nullable=False)
     symbol = db.Column(db.String(5), nullable=False)
+    name = db.Column(db.String, nullable=False)
+    exchange = db.Column(db.String, nullable=False)
+    asset_type = db.Column(db.Enum(AssetType), nullable=False)
+    is_active = db.Column(db.Boolean(), nullable=False, server_default="1")
 
     trades = db.relationship(
         "Trade", back_populates="security", cascade="all, delete-orphan"
@@ -117,6 +125,8 @@ class SecuritySchema(marshmallow.SQLAlchemyAutoSchema):
         load_instance = True
         include_fk = False
         include_relationships = False
+
+    asset_type = EnumField(AssetType, by_value=True)
 
 
 class CurrencySchema(marshmallow.SQLAlchemyAutoSchema):
