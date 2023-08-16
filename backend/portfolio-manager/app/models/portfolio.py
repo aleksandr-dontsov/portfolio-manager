@@ -1,5 +1,4 @@
 import enum
-
 from app.extensions import db, marshmallow
 
 from marshmallow_enum import EnumField
@@ -10,8 +9,9 @@ class Currency(db.Model):
     __tablename__ = "currency"
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.CHAR(3), nullable=False)
+    code = db.Column(db.CHAR(3), nullable=False, unique=True)
     name = db.Column(db.String, nullable=False)
+    symbol = db.Column(db.CHAR(1), nullable=False, unique=True)
 
     portfolios = db.relationship(
         "Portfolio",
@@ -55,12 +55,31 @@ class Portfolio(db.Model):
     )
 
 
+class AssetType(enum.Enum):
+    stock = "STOCK"
+    etf = "ETF"
+
+
+class SecurityStatus(enum.Enum):
+    active = "ACTIVE"
+    delisted = "DELISTED"
+
+
 class Security(db.Model):
     __tablename__ = "security"
 
     id = db.Column(db.Integer, primary_key=True)
-    isin = db.Column(db.String(12), nullable=False)
-    symbol = db.Column(db.String(5), nullable=False)
+    symbol = db.Column(db.String(30), nullable=False, unique=True, index=True)
+    name = db.Column(db.String, nullable=False)
+    exchange = db.Column(db.String, nullable=False)
+    asset_type = db.Column(db.Enum(AssetType), nullable=False)
+    status = db.Column(db.Enum(SecurityStatus), nullable=False)
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=db.func.now(),
+        onupdate=db.func.now(),
+    )
 
     trades = db.relationship(
         "Trade", back_populates="security", cascade="all, delete-orphan"
@@ -118,12 +137,23 @@ class SecuritySchema(marshmallow.SQLAlchemyAutoSchema):
         include_fk = False
         include_relationships = False
 
+    asset_type = EnumField(AssetType, by_value=True)
+    status = EnumField(SecurityStatus, by_value=True)
+
+
+security_schema = SecuritySchema()
+securities_schema = SecuritySchema(many=True)
+
 
 class CurrencySchema(marshmallow.SQLAlchemyAutoSchema):
     class Meta:
         model = Currency
         load_instance = True
         include_fk = False
+
+
+currency_schema = CurrencySchema()
+currencies_schema = CurrencySchema(many=True)
 
 
 class TradeSchema(marshmallow.SQLAlchemyAutoSchema):

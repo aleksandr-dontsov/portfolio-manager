@@ -1,8 +1,6 @@
-import React, {
-    useState,
-} from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signup } from "../api/api";
+import { useAxios } from '../hooks/useAxios';
 import {
     EmailField,
     PasswordField,
@@ -16,6 +14,7 @@ export default function SignUp() {
     const [error, setError] = useState("");
     // useNavigate returns a function that allows a user to navigate programatically
     const navigate = useNavigate();
+    const axios = useAxios();
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -24,11 +23,20 @@ export default function SignUp() {
             return;
         }
         try {
-            await signup(email, password);
-            navigate("/login");
+            await axios.request({
+                method: "POST",
+                data: {
+                    email,
+                    password,
+                },
+                url: "api/signup"
+            })
         } catch (error) {
-            setError(error.response.data.detail);
+            console.log(error);
+            setError(error.data.detail);
+            return;
         }
+        navigate("/login");
     };
 
     return (

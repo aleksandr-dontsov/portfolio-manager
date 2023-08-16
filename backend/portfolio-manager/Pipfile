@@ -18,6 +18,7 @@ flask-bcrypt = "*"
 flask-jwt-extended = "*"
 email-validator = "*"
 password-strength = "*"
+alpha-vantage = "*"
 
 [dev-packages]
 pytest = "*"
@@ -27,4 +28,4 @@ flake8 = "*"
 pytest-dotenv = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.11"

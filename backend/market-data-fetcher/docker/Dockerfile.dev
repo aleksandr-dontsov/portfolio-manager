@@ -1,0 +1,20 @@
+FROM python:3.11-alpine
+
+WORKDIR /usr/src/app
+
+# Prevents Python from writing from pre-compiled
+# .pyc, .pyo files to the disk
+ENV PYTHONDONTWRITEBYTECODE 1
+# Disables buffering, meaning that write operations
+# to stdout and stderr will write immediately
+ENV PYTHONUNBUFFERED 1
+
+COPY ../Pipfile ../Pipfile.lock /usr/src/app/
+
+
+RUN pip install --upgrade pip && \
+    pip install pipenv
+
+# --system Installs dependencies in Pipfile system-wide
+# --deploy Abort if Pipfile.lock is out-of-date
+RUN pipenv install --system --deploy

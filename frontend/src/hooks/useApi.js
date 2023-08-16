@@ -16,13 +16,13 @@ export const useApi = (url, method, payload) => {
                     data: payload,
                     url,
                 });
-                setData(response);
+                setData(response.data);
             } catch (error) {
                 setError(error);
             } finally {
                 setIsLoaded(true);
             }
-        }
+        };
 
         sendRequest();
     }, []);

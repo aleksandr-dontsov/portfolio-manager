@@ -73,6 +73,9 @@ class Config(object):
     # A minimum password length
     MIN_PASSWORD_LENGTH = 8
 
+    # Alpha Vantage API key
+    ALPHA_VANTAGE_API_KEY = "VI7YS8B4N0TLBIYJ"
+
 
 class ProductionConfig(Config):
     """Production configuration"""

@@ -5,16 +5,18 @@ import {
 } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import {
-    CurrencyMenu,
     TextField,
     SubmitButton,
     CancelButton
 } from '../components/Common';
-import { Currencies } from '../constants/constants';
+import { CurrencyMenu } from '../components/CurrencyMenu';
+import { useCurrency } from '../hooks/useCurrency';
 
 function PortfolioEditForm({ axios, portfolio }) {
     const [error, setError] = useState(null);
+    const [currency, setCurrency] = useState(portfolio.currency);
     const navigate = useNavigate();
+    const currencies = useCurrency();
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -24,12 +26,12 @@ function PortfolioEditForm({ axios, portfolio }) {
                 method: "PUT",
                 data: {
                     name: formData.get("name"),
-                    currency_id: Currencies[formData.get("currency")].id,
+                    currency_id: currency.id,
                 },
                 url: `/api/portfolios/${portfolio.id}`
             });
         } catch (error) {
-            setError(error);
+            setError(error.response.data.detail);
             return;
         }
         navigate(-1);
@@ -43,11 +45,14 @@ function PortfolioEditForm({ axios, portfolio }) {
                 onSubmit={handleSubmit}
             >
                 <TextField text={ portfolio.name } /><br />
-                <CurrencyMenu selectedCurrency={ portfolio.currency.code } /><br />
+                <CurrencyMenu
+                    currency={ currency }
+                    setCurrency={ setCurrency }
+                    currencies={ currencies } /><br />
                 <SubmitButton name="Save" />
                 <CancelButton />
             </form>
-            { error && <span>{error.data.detail}</span> }
+            { error && <span>{error}</span> }
         </div>
     );
 }
