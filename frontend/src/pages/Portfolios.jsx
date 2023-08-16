@@ -4,7 +4,7 @@ import { toLocalDate } from '../utils/utils';
 import { useApi } from '../hooks/useApi';
 
 function countPositions(trades) {
-    return [...new Set(trades.map(trade => trade.security.isin))].length;
+    return [...new Set(trades.map(trade => trade.security.symbol))].length;
 }
 
 function PortfolioRow({ index, portfolio }) {

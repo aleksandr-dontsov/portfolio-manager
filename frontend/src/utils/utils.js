@@ -24,21 +24,35 @@ export function toInputDatetimeLocal(utcDatetime) {
 const UsdToCurrencyExchangeRates = {
     EUR: 0.91,
     RUB: 94.50,
+    GBP: 0.79,
 }
 
-// Converts an amount in USD to a given currency
+// Converts an USD amount to a given currency amount
 export function convertFromUsd(amount, currencyCode) {
-    if (currencyCode === "USD") {
+    if (!amount) {
         return amount;
     }
 
-    return amount * UsdToCurrencyExchangeRates[currencyCode];
+    if (currencyCode !== "USD") {
+        amount *= UsdToCurrencyExchangeRates[currencyCode];
+    }
+
+    return amount;
 }
 
 export function convertToUsd(amount, currencyCode) {
-    if (currencyCode === "USD") {
+    if (!amount) {
         return amount;
     }
 
-    return amount * (1 / UsdToCurrencyExchangeRates[currencyCode]);
+    if (currencyCode !== "USD") {
+        amount *= 1 / UsdToCurrencyExchangeRates[currencyCode];
+    }
+
+    return amount;
+}
+
+
+export function calculateTimeDiffInHours(from, to) {
+    return (to - from) / (1000 * 60 * 60);
 }

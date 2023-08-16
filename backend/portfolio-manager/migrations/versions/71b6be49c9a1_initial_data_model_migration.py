@@ -1,8 +1,8 @@
-"""Initial migration
+"""Initial data model migration
 
-Revision ID: 78363d5045f8
+Revision ID: 71b6be49c9a1
 Revises:
-Create Date: 2023-08-08 07:17:35.937651
+Create Date: 2023-08-16 08:11:47.807077
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "78363d5045f8"
+revision = "71b6be49c9a1"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,21 +23,36 @@ def upgrade():
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("code", sa.CHAR(length=3), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
+        sa.Column("symbol", sa.CHAR(length=1), nullable=False),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("code"),
+        sa.UniqueConstraint("symbol"),
     )
     op.create_table(
         "security",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("symbol", sa.String(length=5), nullable=False),
+        sa.Column("symbol", sa.String(length=30), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("exchange", sa.String(), nullable=False),
         sa.Column(
             "asset_type", sa.Enum("stock", "etf", name="assettype"), nullable=False
         ),
-        sa.Column("is_active", sa.Boolean(), server_default="1", nullable=False),
+        sa.Column(
+            "status",
+            sa.Enum("active", "delisted", name="securitystatus"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
+    with op.batch_alter_table("security", schema=None) as batch_op:
+        batch_op.create_index(batch_op.f("ix_security_symbol"), ["symbol"], unique=True)
+
     op.create_table(
         "user",
         sa.Column("id", sa.Integer(), nullable=False),
@@ -129,9 +144,10 @@ def upgrade():
     op.bulk_insert(
         currency_table,
         [
-            {"id": 1, "code": "USD", "name": "Unites States dollar"},
-            {"id": 2, "code": "EUR", "name": "Euro"},
-            {"id": 3, "code": "RUB", "name": "Russian Ruble"},
+            {"id": 1, "code": "USD", "name": "Unites States dollar", "symbol": "$"},
+            {"id": 2, "code": "EUR", "name": "Euro", "symbol": "€"},
+            {"id": 3, "code": "RUB", "name": "Russian Ruble", "symbol": "₽"},
+            {"id": 4, "code": "GBP", "name": "Pound sterling", "symbol": "£"},
         ],
     )
 
@@ -141,6 +157,9 @@ def downgrade():
     op.drop_table("trade")
     op.drop_table("portfolio")
     op.drop_table("user")
+    with op.batch_alter_table("security", schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f("ix_security_symbol"))
+
     op.drop_table("security")
     op.drop_table("currency")
     # ### end Alembic commands ###

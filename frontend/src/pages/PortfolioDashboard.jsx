@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { toLocalDatetime } from '../utils/utils';
 import { useApi } from '../hooks/useApi';
-import { CurrencyAmount } from '../components/Common';
+import { CurrencyAmount } from '../components/CurrencyAmount';
 
 function calculatePerformance(positions) {
     const performance = {
@@ -13,6 +13,9 @@ function calculatePerformance(positions) {
     };
 
     performance.marketValue = positions.reduce((marketValue, position) => {
+        if (position.security.status === "DELISTED") {
+            return marketValue;
+        }
         return marketValue + position.marketValue;
     }, 0);
     return performance
@@ -20,7 +23,7 @@ function calculatePerformance(positions) {
 
 function getPositions(trades) {
     let result = trades.reduce((positions, trade) => {
-        let position = positions.get(trade.security.isin);
+        let position = positions.get(trade.security.symbol);
         if (!position) {
             position = {
                 security: trade.security,
@@ -30,14 +33,14 @@ function getPositions(trades) {
         }
         position.quantity += trade.quantity;
         position.marketValue += trade.quantity * trade.unit_price;
-        positions.set(trade.security.isin, position);
+        positions.set(trade.security.symbol, position);
         return positions;
     }, new Map());
 
     return Array.from(result.values());
 }
 
-function Portfolio({ name, performance, currencyCode }) {
+function Portfolio({ name, performance, currency }) {
     return (
         <div>
             <div>
@@ -55,10 +58,10 @@ function Portfolio({ name, performance, currencyCode }) {
                 </thead>
                 <tbody>
                     <tr>
-                        <td><CurrencyAmount value={performance.marketValue} currencyCode={currencyCode} /></td>
-                        <td><CurrencyAmount value={performance.capitalGain} currencyCode={currencyCode} /></td>
-                        <td><CurrencyAmount value={performance.dividends} currencyCode={currencyCode} /></td>
-                        <td><CurrencyAmount value={performance.totalReturn} currencyCode={currencyCode} /></td>
+                        <td><CurrencyAmount usdAmount={performance.marketValue} currency={currency} /></td>
+                        <td><CurrencyAmount usdAmount={performance.capitalGain} currency={currency} /></td>
+                        <td><CurrencyAmount usdAmount={performance.dividends} currency={currency} /></td>
+                        <td><CurrencyAmount usdAmount={performance.totalReturn} currency={currency} /></td>
                     </tr>
                 </tbody>
             </table>
@@ -66,27 +69,29 @@ function Portfolio({ name, performance, currencyCode }) {
     )
 }
 
-function PositionRow({ position, currencyCode }) {
+function PositionRow({ position, currency }) {
     // TODO: Calculate dynamic parameters
+    const isDelisted = position.security.status === "DELISTED"
+    const style = isDelisted ? {color: 'gray'} : {color: 'black'};
     return (
-        <tr>
-            <td>{`${position.security.symbol} / ${position.security.isin}`}</td>
-            <td><CurrencyAmount value={position.marketValue} currencyCode={currencyCode} /></td>
+        <tr style={style}>
+            <td>{`${position.security.symbol} | ${position.security.name}`} {isDelisted && <span style={{color: 'red'}}>[DELISTED]</span>}</td>
+            <td><CurrencyAmount usdAmount={position.marketValue} currency={currency} /></td>
             <td>{position.quantity}</td>
-            <td><CurrencyAmount value={0} currencyCode={currencyCode} /></td>
-            <td><CurrencyAmount value={0} currencyCode={currencyCode} /></td>
-            <td><CurrencyAmount value={0} currencyCode={currencyCode} /></td>
+            <td><CurrencyAmount usdAmount={0} currency={currency} /></td>
+            <td><CurrencyAmount usdAmount={0} currency={currency} /></td>
+            <td><CurrencyAmount usdAmount={0} currency={currency} /></td>
         </tr>
     );
 }
 
-function Positions({ positions, currencyCode }) {
+function Positions({ positions, currency }) {
     const rows = positions.map((position, index) => {
         return (
             <PositionRow
                 key={index}
                 position={position}
-                currencyCode={ currencyCode } />
+                currency={ currency } />
         );
     });
     // calculate values
@@ -110,20 +115,22 @@ function Positions({ positions, currencyCode }) {
     );
 }
 
-function TradeRow({ trade, currencyCode }) {
+function TradeRow({ trade, currency }) {
+    const isDelisted = trade.security.status === "DELISTED"
+    const style = isDelisted ? {color: 'gray'} : {color: 'black'};
     return (
-        <tr>
+        <tr style={style}>
             <td>{toLocalDatetime(trade.trade_datetime)}</td>
-            <td>{`${trade.security.symbol} / ${trade.security.isin}`}</td>
+            <td>{`${trade.security.symbol} | ${trade.security.name}`} {isDelisted && <span style={{color: 'red'}}>[DELISTED]</span>}</td>
             <td>{trade.trade_type}</td>
-            <td><CurrencyAmount value={trade.unit_price} currencyCode={currencyCode} /></td>
+            <td><CurrencyAmount usdAmount={trade.unit_price} currency={currency} /></td>
             <td>{trade.quantity}</td>
-            <td><CurrencyAmount value={trade.brokerage_fee} currencyCode={currencyCode} /></td>
-            <td><CurrencyAmount value={trade.unit_price * trade.quantity} currencyCode={currencyCode} /></td>
+            <td><CurrencyAmount usdAmount={trade.brokerage_fee} currency={currency} /></td>
+            <td><CurrencyAmount usdAmount={trade.unit_price * trade.quantity} currency={currency} /></td>
             <td>
                 <Link
                     to={`trades/${trade.id}/edit`}
-                    state={{ currencyCode }}
+                    state={{ currency }}
                 >
                     edit
                 </Link>
@@ -132,13 +139,13 @@ function TradeRow({ trade, currencyCode }) {
     );
 }
 
-function Trades({ trades, currencyCode }) {
+function Trades({ trades, currency }) {
     const rows = trades.map((trade) => {
         return (
             <TradeRow
                 key={trade.id}
                 trade={trade}
-                currencyCode={ currencyCode } />
+                currency={ currency } />
         );
     })
     return (
@@ -146,7 +153,7 @@ function Trades({ trades, currencyCode }) {
             <h3>Trades</h3>
             <Link
                 to="trades/create"
-                state={{ currencyCode }}
+                state={{ currency }}
             >
                 Add Trades
             </Link>
@@ -189,7 +196,12 @@ export default function PortfolioDashboard() {
         return (
             <div>
                 <p>{`Portfolio '${portfolio.name}' doesn't have any trades yet.`} </p>
-                <Link to="trades/create">Add your first Trade</Link>
+                <Link
+                    to="trades/create"
+                    state={{ currency: portfolio.currency }}
+                >
+                    Add your first Trade
+                </Link>
             </div>
         );
     }
@@ -200,13 +212,13 @@ export default function PortfolioDashboard() {
             <Portfolio
                 name={ portfolio.name }
                 performance={ performance }
-                currencyCode={ portfolio.currency.code } />
+                currency={ portfolio.currency } />
             <Positions
                 positions={ positions }
-                currencyCode={ portfolio.currency.code } />
+                currency={ portfolio.currency } />
             <Trades
                 trades={ trades }
-                currencyCode={ portfolio.currency.code } />
+                currency={ portfolio.currency } />
         </div>
     );
 }

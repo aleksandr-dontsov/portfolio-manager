@@ -10,7 +10,6 @@ import { api } from "../api/api";
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    // TODO: Fix the problem with isLoggedIn stale value
     const [isLoggedIn, setIsLoggedIn] = useLocalStorage("isLoggedIn", false);
     const navigate = useNavigate();
 
@@ -35,12 +34,12 @@ export const AuthProvider = ({ children }) => {
     // useMemo is a hook that lets one cache the result of a calculation between re-renders
     const value = useMemo(
         () => ({
-            isLoggedIn,
+            isLoggedIn: isLoggedIn.value,
             setIsLoggedIn,
             onLogin: handleLogin,
             onLogout: handleLogout,
         }),
-        [isLoggedIn]
+        [isLoggedIn.value]
     );
 
     // 3. provide context

@@ -30,13 +30,13 @@ export const useAxios = () => {
 
         const responseIntercept = api.interceptors.response.use(
             (response) => {
-                return response.data;
+                return response;
             },
             (error) => {
                 if (error.response.status === StatusCodes.UNAUTHORIZED) {
                     setIsLoggedIn(false);
                 }
-                return Promise.reject(error.response);
+                return Promise.reject(error);
             }
         );
 

@@ -5,13 +5,15 @@ from app.api.portfolios import get_portfolio_by_id
 from app.models.portfolio import (
     Trade,
     TradeType,
+    Security,
+    SecurityStatus,
     trade_schema,
     trades_schema,
 )
 from flask_jwt_extended import jwt_required
 
 
-def get_trade(portfolio_id, trade_id):
+def get_trade(portfolio_id: int, trade_id: int):
     trade = db.session.scalar(db.select(Trade).filter_by(id=trade_id))
     if trade is None:
         raise PortmanError(404, f"Trade with id {trade_id} not found")
@@ -20,6 +22,16 @@ def get_trade(portfolio_id, trade_id):
             403, f"Trade with id {trade_id} does not belong to the given portfolio"
         )
     return trade
+
+
+def validate_security(security_id: int):
+    security = db.session.scalar(db.select(Security).filter_by(id=security_id))
+    if not security:
+        raise PortmanError(400, f"Security with id {security_id} does not exist")
+    if security.status == SecurityStatus.delisted:
+        raise PortmanError(
+            400, f"Security '{security.symbol}, {security.name}' has been delisted"
+        )
 
 
 def validate_trade_params(params):
@@ -36,6 +48,7 @@ def validate_trade_params(params):
         raise PortmanError(400, "Trade quantity must be a positive number")
     if params["brokerage_fee"] < 0:
         raise PortmanError(400, "Trade brokerage fee cannot be a negative number")
+    validate_security(params["security_id"])
 
 
 @jwt_required()
@@ -98,7 +111,6 @@ def update(portfolio_id, trade_id, trade_params):
         existing_trade.unit_price = new_trade.unit_price
         existing_trade.quantity = new_trade.quantity
         existing_trade.brokerage_fee = new_trade.brokerage_fee
-        # db.session.merge(existing_trade)
         db.session.commit()
         return trade_schema.dump(existing_trade), 200
     except PortmanError as error:

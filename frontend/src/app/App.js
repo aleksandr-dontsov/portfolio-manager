@@ -25,9 +25,6 @@ import PortfolioEdit from '../pages/PortfolioEdit';
 import PortfolioDashboard from '../pages/PortfolioDashboard';
 import TradeCreate from '../pages/TradeCreate';
 import TradeEdit from '../pages/TradeEdit';
-import {
-    action as deleteTrade,
-} from '../pages/TradeDelete';
 
 import logoImage from '../assets/logo.svg';
 
@@ -125,11 +122,7 @@ function ProtectedLayout() {
         return <Navigate to="/login" />;
     }
 
-    return (
-        <>
-            <Outlet />
-        </>
-    );
+    return <Outlet />
 }
 
 export const router = createBrowserRouter([
@@ -186,10 +179,6 @@ export const router = createBrowserRouter([
                     {
                         path: "/portfolios/:portfolioId/trades/:tradeId/edit",
                         element: <TradeEdit />,
-                    },
-                    {
-                        path: "/portfolios/:portfolioId/trades/:tradeId/delete",
-                        action: deleteTrade,
                     },
                     {
                         path: "/change-password",

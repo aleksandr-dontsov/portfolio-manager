@@ -1,4 +1,4 @@
-from app.extensions import db, migrate, marshmallow, jwt, bcrypt
+from app.extensions import db, migrate, marshmallow, jwt, bcrypt, market_data_api
 from connexion import FlaskApp
 from connexion.resolver import RelativeResolver
 from flask_jwt_extended import (
@@ -43,6 +43,7 @@ def initialize_extensions(app):
     marshmallow.init_app(app)
     jwt.init_app(app)
     bcrypt.init_app(app)
+    market_data_api.init_app(app)
 
     # Refresh token that will expire in less than 30 minutes
     @app.after_request
