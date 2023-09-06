@@ -6,7 +6,7 @@ from flask_security import current_user
 
 from manage import create_db
 from app import create_app
-from app.extensions import db, security
+from app.components.extensions import db, security
 from app.models.portfolio import Currency, Portfolio, Security, Trade
 
 registered_user = {"email": "registered.user@gmail.com", "password": "Registered.user1"}

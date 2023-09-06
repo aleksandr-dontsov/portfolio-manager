@@ -9,7 +9,7 @@ import pytest
 from flask_security import current_user
 from sqlalchemy import func
 from conftest import existing_portfolio, new_portfolio
-from app.extensions import db
+from app.components.extensions import db
 from app.models.portfolio import Portfolio, portfolio_schema
 
 

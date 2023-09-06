@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Link } from 'react-router-dom';
 import { toLocalDate } from '../utils/utils';
 import { useApi } from '../hooks/useApi';
@@ -23,7 +23,6 @@ function PortfolioRow({ index, portfolio }) {
 }
 
 export default function Portfolios() {
-    // const [portfolios, setPortfolios] = useState([]);
     const { data: portfolios, error, isLoaded } = useApi("/api/portfolios", "GET");
 
     if (!isLoaded) {

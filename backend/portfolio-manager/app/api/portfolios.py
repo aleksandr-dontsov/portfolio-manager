@@ -1,5 +1,5 @@
-from app.extensions import db
-from app.common import make_error_response, PortmanError
+from app.components.extensions import db
+from app.components.errors import make_error_response, PortfolioManagerError
 from app.models.portfolio import Portfolio, portfolio_schema, portfolios_schema
 from flask_jwt_extended import get_current_user, jwt_required
 from sqlalchemy import asc
@@ -9,14 +9,14 @@ MAX_PORTFOLIO_NAME_LENGTH = 150
 
 def validate_portfolio_params(portfolio):
     if not portfolio["name"]:
-        raise PortmanError(400, "Portfolio name is empty")
+        raise PortfolioManagerError(400, "Portfolio name is empty")
     if len(portfolio["name"]) > MAX_PORTFOLIO_NAME_LENGTH:
-        raise PortmanError(
+        raise PortfolioManagerError(
             400,
             f"Portfolio name length is more than {MAX_PORTFOLIO_NAME_LENGTH} characters",
         )
     if portfolio["currency_id"] < 1:
-        raise PortmanError(
+        raise PortfolioManagerError(
             400, f"Currency with id {portfolio['currency_id']} doesn't exist"
         )
 
@@ -26,9 +26,9 @@ def get_portfolio_by_id(portfolio_id):
         db.select(Portfolio).filter_by(id=portfolio_id)
     ).scalar()
     if not portfolio:
-        raise PortmanError(404, f"Portfolio with id {portfolio_id} not found")
+        raise PortfolioManagerError(404, f"Portfolio with id {portfolio_id} not found")
     if portfolio.user_id != get_current_user().id:
-        raise PortmanError(
+        raise PortfolioManagerError(
             403, f"Portfolio with id {portfolio_id} doesn't belong to the current user"
         )
     return portfolio
@@ -40,7 +40,9 @@ def get_portfolio_by_name(portfolio_name):
         db.select(Portfolio).filter_by(user_id=user_id, name=portfolio_name)
     ).scalar()
     if not portfolio:
-        raise PortmanError(404, f"Portfolio with name '{portfolio_name}' not found")
+        raise PortfolioManagerError(
+            404, f"Portfolio with name '{portfolio_name}' not found"
+        )
     return portfolio
 
 
@@ -65,7 +67,7 @@ def read_all():
 def read_one(portfolio_id):
     try:
         return portfolio_schema.dump(get_portfolio_by_id(portfolio_id)), 200
-    except PortmanError as error:
+    except PortfolioManagerError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()
@@ -85,7 +87,7 @@ def create(portfolio):
             )
         ).scalar()
         if existing_portfolio:
-            raise PortmanError(
+            raise PortfolioManagerError(
                 400, f"Portfolio with a name '{portfolio['name']}' already exists"
             )
         portfolio["user_id"] = current_user.id
@@ -93,7 +95,7 @@ def create(portfolio):
         db.session.add(new_portfolio)
         db.session.commit()
         return portfolio_schema.dump(new_portfolio), 201
-    except PortmanError as error:
+    except PortfolioManagerError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()
@@ -112,7 +114,7 @@ def update(portfolio_id, portfolio):
             )
         ).scalar()
         if existing_portfolio and existing_portfolio.id != portfolio_id:
-            raise PortmanError(
+            raise PortfolioManagerError(
                 400, f"Portfolio with a name '{portfolio['name']}' already exists"
             )
 
@@ -122,7 +124,7 @@ def update(portfolio_id, portfolio):
         updated_portfolio.currency_id = new_portfolio.currency_id
         db.session.commit()
         return portfolio_schema.dump(updated_portfolio), 200
-    except PortmanError as error:
+    except PortfolioManagerError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()
@@ -136,7 +138,7 @@ def delete(portfolio_id):
         db.session.delete(portfolio)
         db.session.commit()
         return "", 204
-    except PortmanError as error:
+    except PortfolioManagerError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()

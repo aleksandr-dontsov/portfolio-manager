@@ -35,7 +35,9 @@ def upgrade():
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("exchange", sa.String(), nullable=False),
         sa.Column(
-            "asset_type", sa.Enum("stock", "etf", name="assettype"), nullable=False
+            "asset_type",
+            sa.Enum("stock", "etf", "trust", name="assettype"),
+            nullable=False,
         ),
         sa.Column(
             "status",

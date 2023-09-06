@@ -1,8 +1,8 @@
 from flask import jsonify
 
 
-class PortmanError(Exception):
-    """Base class for exceptions in Portfolio Manager App."""
+class PortfolioManagerError(Exception):
+    """Base class for exceptions in PortfolioManager App."""
 
     def __init__(self, status: int, detail: str):
         self.status = status

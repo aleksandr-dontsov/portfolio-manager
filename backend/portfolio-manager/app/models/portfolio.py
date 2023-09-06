@@ -1,5 +1,5 @@
 import enum
-from app.extensions import db, marshmallow
+from app.components.extensions import db, marshmallow
 
 from marshmallow_enum import EnumField
 from marshmallow_sqlalchemy import fields
@@ -58,6 +58,7 @@ class Portfolio(db.Model):
 class AssetType(enum.Enum):
     stock = "STOCK"
     etf = "ETF"
+    trust = "TRUST"
 
 
 class SecurityStatus(enum.Enum):

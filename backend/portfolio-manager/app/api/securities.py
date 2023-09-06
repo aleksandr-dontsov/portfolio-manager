@@ -1,8 +1,10 @@
-from app.extensions import db, market_data_api
-from app.common import make_error_response, PortmanError
+from app.components.extensions import db
+from app.components.market_data_fetcher import market_data_fetcher
+from app.components.errors import make_error_response, PortfolioManagerError
 from app.models.portfolio import (
     Security,
     SecurityStatus,
+    AssetType,
     securities_schema,
     security_schema,
 )
@@ -10,57 +12,26 @@ from flask import current_app
 from flask_jwt_extended import jwt_required
 from datetime import datetime, timezone
 
-SECURITIES_UPDATE_INTERVAL_HOURS = 24
-API_SECURITY_MODEL = [
-    "symbol",
-    "name",
-    "exchange",
-    "assetType",
-    "ipoDate",
-    "delistingDate",
-    "status",
-]
-
-
-def validate_security_model(actual: list[str], expected: list[str]):
-    if len(actual) != len(expected):
-        current_app.logger.error(
-            f"Cannot load securities. Unexpected security model received, {actual}"
-        )
-        raise PortmanError(400, "Cannot load securities")
-
-    for actual_column, expected_column in zip(actual, expected):
-        if actual_column != expected_column:
-            current_app.logger.error(
-                f"Cannot load securities. Unexpected security model received, {actual}"
-            )
-            raise PortmanError(400, "Cannot load securities")
-
 
 def load_securities() -> list[Security]:
     securities = []
-    try:
-        rows, _ = market_data_api.get_listing_status()
-        security_model = next(rows)
-        validate_security_model(security_model, API_SECURITY_MODEL)
-        while True:
-            row = next(rows)
-            securities.append(
-                security_schema.load(
-                    {
-                        "symbol": row[0],
-                        "name": row[1],
-                        "exchange": row[2],
-                        "asset_type": row[3].upper(),
-                        "status": row[6].upper(),
-                    }
-                )
+    for security in market_data_fetcher.get_traded_securities():
+        if security["assetType"] not in AssetType._member_map_:
+            current_app.logger.info(security)
+            continue
+
+        securities.append(
+            security_schema.load(
+                {
+                    "symbol": security["symbol"],
+                    "name": security["name"],
+                    "exchange": security["exchange"],
+                    "asset_type": security["assetType"].upper(),
+                    "status": SecurityStatus.active,
+                }
             )
-    except StopIteration:
-        pass
-    current_app.logger.info(
-        f"Successfully loaded {len(securities)} securities from the market data source"
-    )
+        )
+    current_app.logger.info(f"Successfully loaded {len(securities)} securities")
     return securities
 
 
@@ -92,15 +63,13 @@ def update_db_securities_list(
             update_stats["delisted"].append(security_schema.dump(db_security))
 
     db.session.commit()
-    db.session.rollback()
-    current_app.logger.info(f"Securities update statistics: {update_stats}")
-    return securities_schema.dump(db_securities)
+    current_app.logger.info("Successfully updated securities in the database.")
 
 
 @jwt_required()
 def read_all():
     try:
-        db_securities = list(db.session.execute(db.select(Security)).scalars())
+        db_securities = db.session.execute(db.select(Security)).scalars().all()
         if not db_securities:
             current_app.logger.info("Populate securities table")
             return update_db_securities_list(
@@ -110,14 +79,19 @@ def read_all():
         update_datetime = db_securities[0].updated_at
         update_delta = datetime.now(timezone.utc) - update_datetime
         update_delta_hours = update_delta.total_seconds() / 3600
-        if update_delta_hours > SECURITIES_UPDATE_INTERVAL_HOURS:
+        update_interval_hours = current_app.config.get(
+            "SECURITIES_UPDATE_INTERVAL_HOURS"
+        )
+        if update_delta_hours > update_interval_hours:
             current_app.logger.info("Update securities table")
             return update_db_securities_list(
                 api_securities=load_securities(), db_securities=db_securities
             )
 
+        current_app.logger.info("No security updates")
         return securities_schema.dump(db_securities), 200
-    except PortmanError as error:
+    except PortfolioManagerError as error:
+        db.session.rollback()
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()

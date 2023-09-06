@@ -10,7 +10,7 @@ info:
 servers:
     # Defines the root path of your API
     # All API paths will be accessible through
-    # http://localhost:5000/api
+    # http://localhost:8000/api
     - url: "/api"
 
 # Components are building blocks in your OpenAPI specification
@@ -158,7 +158,7 @@ components:
             name: "portfolio_id"
             description: "Id of the portfolio to get"
             in: path
-            required: True
+            required: true
             schema:
                 type: "integer"
 
@@ -166,9 +166,19 @@ components:
             name: "trade_id"
             description: "Id of the trade"
             in: path
-            required: True
+            required: true
             schema:
                 type: "integer"
+
+        securities:
+            name: "securities"
+            description: "Comma-separated list of security symbols"
+            in: query
+            required: true
+            schema:
+                type: "array"
+                items:
+                    type: "string"
 
 
 paths:
@@ -180,7 +190,7 @@ paths:
             summary: "Sign up a new user"
             requestBody:
                 description: "User credentials"
-                required: True
+                required: true
                 x-body-name: "credentials"
                 content:
                     application/json:
@@ -202,7 +212,7 @@ paths:
             summary: "Login to the website"
             requestBody:
                 description: "User credentials"
-                required: True
+                required: true
                 x-body-name: "credentials"
                 content:
                     application/json:
@@ -227,7 +237,7 @@ paths:
             requestBody:
                 description: "User passwords"
                 x-body-name: "passwords"
-                required: True
+                required: true
                 content:
                     application/json:
                         schema:
@@ -318,7 +328,7 @@ paths:
             summary: "Create a portfolio"
             requestBody:
                 description: "Portfolio to create"
-                required: True
+                required: true
                 x-body-name: "portfolio"
                 content:
                     # Define data exchange format
@@ -418,7 +428,7 @@ paths:
                 - $ref: "#/components/parameters/portfolio_id"
             requestBody:
                 description: "Trade to create"
-                required: True
+                required: true
                 x-body-name: "trade_params"
                 content:
                     # Define data exchange format
@@ -492,3 +502,19 @@ paths:
                     description: "Successfully deleted trade"
                 "401":
                     $ref: "#/components/responses/Unauthorized"
+
+    /streams/quotes:
+        get:
+            operationId: "streams.quotes"
+            tags:
+                - Streams
+            summary: "Subscribe for real-time updates of security quotes"
+            parameters:
+                - $ref: "#/components/parameters/securities"
+            responses:
+                "200":
+                    description: "Successfully subscribed for security quotes updates"
+                    content:
+                        text/event-stream:
+                            schema:
+                                type: "string"

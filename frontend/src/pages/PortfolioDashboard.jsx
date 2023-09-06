@@ -1,43 +1,81 @@
-import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { toLocalDatetime } from '../utils/utils';
 import { useApi } from '../hooks/useApi';
 import { CurrencyAmount } from '../components/CurrencyAmount';
+import { useStream } from '../hooks/useStream';
+import { getQuotesUrl } from '../api/api';
 
-function calculatePerformance(positions) {
-    const performance = {
+function getSecurities(trades) {
+    return Array.from(new Set(trades.map(trade => trade.security.symbol)))
+}
+
+function calculatePortfolioPerformance(positions) {
+    let performance = {
+        buyIn: 0,
         marketValue: 0,
-        capitalGain: 0,
-        dividends: 0,
         totalReturn: 0,
     };
 
-    performance.marketValue = positions.reduce((marketValue, position) => {
+    performance = positions.reduce((performance, position) => {
         if (position.security.status === "DELISTED") {
-            return marketValue;
+            return performance;
         }
-        return marketValue + position.marketValue;
-    }, 0);
-    return performance
+        performance.buyIn += position.buyIn;
+        performance.marketValue += position.marketValue;
+        performance.totalReturn += position.totalReturn;
+        return performance;
+    }, performance);
+
+    return performance;
 }
 
-function getPositions(trades) {
+function calculatePositionsPerformance(trades, quotes) {
+    // Calculate static values
     let result = trades.reduce((positions, trade) => {
-        let position = positions.get(trade.security.symbol);
+        let position = positions.get(trade.security);
         if (!position) {
             position = {
                 security: trade.security,
                 quantity: 0,
+                buyIn: 0,
                 marketValue: 0,
+                totalReturn: 0,
             };
         }
         position.quantity += trade.quantity;
-        position.marketValue += trade.quantity * trade.unit_price;
-        positions.set(trade.security.symbol, position);
+        position.buyIn += trade.quantity * trade.unit_price;
+        positions.set(trade.security, position);
         return positions;
     }, new Map());
 
-    return Array.from(result.values());
+    // Calculate dynamic values
+    let positions = Array.from(result.values());
+    for (let i = 0; i < positions.length; ++i) {
+        const position = positions[i];
+        if (!quotes.has(position.security.symbol)) {
+            continue;
+        }
+        const marketPrice = quotes.get(position.security.symbol);
+        positions[i].marketValue = position.quantity * marketPrice;
+        positions[i].totalReturn = position.marketValue - position.buyIn;
+    }
+
+    return positions;
+}
+
+function TotalReturnAmount({ totalReturn, currency }) {
+    let color = 'black';
+    if (totalReturn > 0) {
+        color = 'green';
+    } else if (totalReturn < 0) {
+        color = 'red';
+    }
+    const style = {color: color};
+    return (
+        <td style={style}>
+            <CurrencyAmount usdAmount={totalReturn} currency={currency} />
+        </td>
+    );
 }
 
 function Portfolio({ name, performance, currency }) {
@@ -50,18 +88,16 @@ function Portfolio({ name, performance, currency }) {
             <table>
                 <thead>
                     <tr>
+                        <th>Buy in</th>
                         <th>Market Value</th>
-                        <th>Capital Gain</th>
-                        <th>Dividends</th>
                         <th>Total Return</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
+                        <td><CurrencyAmount usdAmount={performance.buyIn} currency={currency} /></td>
                         <td><CurrencyAmount usdAmount={performance.marketValue} currency={currency} /></td>
-                        <td><CurrencyAmount usdAmount={performance.capitalGain} currency={currency} /></td>
-                        <td><CurrencyAmount usdAmount={performance.dividends} currency={currency} /></td>
-                        <td><CurrencyAmount usdAmount={performance.totalReturn} currency={currency} /></td>
+                        <TotalReturnAmount totalReturn={performance.totalReturn} currency={currency} />
                     </tr>
                 </tbody>
             </table>
@@ -76,11 +112,10 @@ function PositionRow({ position, currency }) {
     return (
         <tr style={style}>
             <td>{`${position.security.symbol} | ${position.security.name}`} {isDelisted && <span style={{color: 'red'}}>[DELISTED]</span>}</td>
-            <td><CurrencyAmount usdAmount={position.marketValue} currency={currency} /></td>
             <td>{position.quantity}</td>
-            <td><CurrencyAmount usdAmount={0} currency={currency} /></td>
-            <td><CurrencyAmount usdAmount={0} currency={currency} /></td>
-            <td><CurrencyAmount usdAmount={0} currency={currency} /></td>
+            <td><CurrencyAmount usdAmount={position.buyIn} currency={currency} /></td>
+            <td><CurrencyAmount usdAmount={position.marketValue} currency={currency} /></td>
+            <TotalReturnAmount totalReturn={position.totalReturn} currency={currency} />
         </tr>
     );
 }
@@ -102,10 +137,9 @@ function Positions({ positions, currency }) {
                 <thead>
                     <tr>
                         <th>Security</th>
-                        <th>Market Value</th>
                         <th>Quantity</th>
-                        <th>Capital Gain</th>
-                        <th>Dividends</th>
+                        <th>Buy in</th>
+                        <th>Market Value</th>
                         <th>Total Return</th>
                     </tr>
                 </thead>
@@ -175,9 +209,30 @@ function Trades({ trades, currency }) {
     );
 }
 
+function PortfolioPerformancePanel({ portfolio }) {
+    const { data } = useStream(getQuotesUrl(getSecurities(portfolio.trades)))
+    let quotes = new Map()
+    if (data) {
+        quotes = new Map(Object.entries(JSON.parse(data)));
+    }
+    const positions = calculatePositionsPerformance(portfolio.trades, quotes);
+    const performance = calculatePortfolioPerformance(positions);
+
+    return (
+        <>
+            <Portfolio
+                name={ portfolio.name }
+                performance={ performance }
+                currency={ portfolio.currency } />
+            <Positions
+                positions={ positions }
+                currency={ portfolio.currency } />
+        </>
+    );
+}
+
 export default function PortfolioDashboard() {
     const params = useParams();
-
     const { data: portfolio, error, isLoaded } =
         useApi(`/api/portfolios/${params.portfolioId}`, "GET");
 
@@ -205,17 +260,11 @@ export default function PortfolioDashboard() {
             </div>
         );
     }
-    const positions = getPositions(trades);
-    const performance = calculatePerformance(positions);
+
     return (
         <div>
-            <Portfolio
-                name={ portfolio.name }
-                performance={ performance }
-                currency={ portfolio.currency } />
-            <Positions
-                positions={ positions }
-                currency={ portfolio.currency } />
+            <PortfolioPerformancePanel
+                portfolio={ portfolio } />
             <Trades
                 trades={ trades }
                 currency={ portfolio.currency } />

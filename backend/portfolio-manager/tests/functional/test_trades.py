@@ -9,7 +9,7 @@ import pytest
 from datetime import datetime
 from sqlalchemy import func
 from conftest import existing_trade, create_random_trade_params
-from app.extensions import db
+from app.components.extensions import db
 from app.models.portfolio import Trade
 
 

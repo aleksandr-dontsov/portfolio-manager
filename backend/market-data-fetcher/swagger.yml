@@ -1,0 +1,148 @@
+# swagger.yml
+
+# The version of your OpenAPI definition
+openapi: 3.0.0
+info:
+    title: "Market Data Fetcher API"
+    description: "API for fetching market data"
+    version: "1.0.0"
+
+servers:
+    # Defines the root path of your API
+    - url: "http://localhost:5000/api/v1"
+
+# Components are building blocks in your OpenAPI specification
+# that you can reference from other parts of your sepcification
+components:
+    schemas:
+        Response:
+            type: "object"
+            required:
+                - message
+            properties:
+                message:
+                    type: "string"
+
+    responses:
+        BadRequest:
+            description: "Bad request."
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Response"
+        InternalServerError:
+            description: "Internal server error."
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Response"
+
+    parameters:
+        currencies:
+            name: "currencies"
+            description: "Comma-separated list of currency codes"
+            in: query
+            required: true
+            schema:
+                type: "array"
+                items:
+                    type: "string"
+
+paths:
+    /health:
+        get:
+            operationId: "health.check"
+            tags:
+                - Health
+            summary: "Check the health of the service"
+            responses:
+                "200":
+                    description: "The service is healthy"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
+                "503":
+                    description: "The service is unhealthy"
+
+    /market/quote:
+        put:
+            operationId: "market.quote"
+            tags:
+                - Market
+            summary: "Add securities that publisher will stream quotes for"
+            requestBody:
+                description: "Security symbols"
+                required: true
+                x-body-name: "securities"
+                content:
+                    application/json:
+                        schema:
+                            type: "array"
+                            items:
+                                type: "string"
+            responses:
+                "200":
+                    description: "Successfully added securities for streaming quotes"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
+
+    /market/fx:
+        get:
+            operationId: "market.fx"
+            tags:
+                - Market
+            summary: "Get exchange rates for currencies relative to USD"
+            parameters:
+                - $ref: "#/components/parameters/currencies"
+            responses:
+                "200":
+                    description: "Successfully got exchange rates for currencies"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
+
+    /market/security/list:
+        get:
+            operationId: "market.security"
+            tags:
+                - Market
+            summary: "Get a list of traded securities"
+            responses:
+                "200":
+                    description: "Successfully got the list of traded securities"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
+
+    /scheduler/resume:
+        put:
+            operationId: "scheduler.resume"
+            tags:
+                - Scheduler
+            summary: "Resume scheduler"
+            responses:
+                "200":
+                    description: "Successfully resumed scheduler"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
+
+    /scheduler/pause:
+        put:
+            operationId: "scheduler.pause"
+            tags:
+                - Scheduler
+            summary: "Pause scheduler"
+            responses:
+                "200":
+                    description: "Successfully paused scheduler"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalServerError"
