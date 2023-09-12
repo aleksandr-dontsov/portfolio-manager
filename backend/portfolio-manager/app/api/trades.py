@@ -1,6 +1,6 @@
 from datetime import datetime
-from app.extensions import db
-from app.common import make_error_response, PortmanError
+from app.components.extensions import db
+from app.components.errors import make_error_response, PortfolioManagerError
 from app.api.portfolios import get_portfolio_by_id
 from app.models.portfolio import (
     Trade,
@@ -16,9 +16,9 @@ from flask_jwt_extended import jwt_required
 def get_trade(portfolio_id: int, trade_id: int):
     trade = db.session.scalar(db.select(Trade).filter_by(id=trade_id))
     if trade is None:
-        raise PortmanError(404, f"Trade with id {trade_id} not found")
+        raise PortfolioManagerError(404, f"Trade with id {trade_id} not found")
     if trade.portfolio_id is not portfolio_id:
-        raise PortmanError(
+        raise PortfolioManagerError(
             403, f"Trade with id {trade_id} does not belong to the given portfolio"
         )
     return trade
@@ -27,9 +27,11 @@ def get_trade(portfolio_id: int, trade_id: int):
 def validate_security(security_id: int):
     security = db.session.scalar(db.select(Security).filter_by(id=security_id))
     if not security:
-        raise PortmanError(400, f"Security with id {security_id} does not exist")
+        raise PortfolioManagerError(
+            400, f"Security with id {security_id} does not exist"
+        )
     if security.status == SecurityStatus.delisted:
-        raise PortmanError(
+        raise PortfolioManagerError(
             400, f"Security '{security.symbol}, {security.name}' has been delisted"
         )
 
@@ -37,17 +39,21 @@ def validate_security(security_id: int):
 def validate_trade_params(params):
     trade_types = set(item.value for item in TradeType)
     if params["trade_type"] not in trade_types:
-        raise PortmanError(400, f"Trade type '{params['trade_type']}' doesn't exist")
+        raise PortfolioManagerError(
+            400, f"Trade type '{params['trade_type']}' doesn't exist"
+        )
     try:
         datetime.strptime(params["trade_datetime"], "%Y-%m-%dT%H:%M:%S.%fZ")
     except ValueError as error:
-        raise PortmanError(400, f"Trade datetime is not valid, error: {error}")
+        raise PortfolioManagerError(400, f"Trade datetime is not valid, error: {error}")
     if params["unit_price"] <= 0:
-        raise PortmanError(400, "Trade unit price must be a positive number")
+        raise PortfolioManagerError(400, "Trade unit price must be a positive number")
     if params["quantity"] <= 0:
-        raise PortmanError(400, "Trade quantity must be a positive number")
+        raise PortfolioManagerError(400, "Trade quantity must be a positive number")
     if params["brokerage_fee"] < 0:
-        raise PortmanError(400, "Trade brokerage fee cannot be a negative number")
+        raise PortfolioManagerError(
+            400, "Trade brokerage fee cannot be a negative number"
+        )
     validate_security(params["security_id"])
 
 
@@ -57,7 +63,7 @@ def read_one(portfolio_id, trade_id):
         get_portfolio_by_id(portfolio_id)
         trade = get_trade(portfolio_id, trade_id)
         return trade_schema.dump(trade), 200
-    except PortmanError as error:
+    except PortfolioManagerError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()
@@ -72,7 +78,7 @@ def read_all(portfolio_id):
             db.select(Trade).filter_by(portfolio_id=portfolio_id)
         )
         return trades_schema.dump(trades), 200
-    except PortmanError as error:
+    except PortfolioManagerError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()
@@ -89,7 +95,7 @@ def create(portfolio_id, trade_params):
         portfolio.trades.append(new_trade)
         db.session.commit()
         return trade_schema.dump(new_trade), 201
-    except PortmanError as error:
+    except PortfolioManagerError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()
@@ -113,7 +119,7 @@ def update(portfolio_id, trade_id, trade_params):
         existing_trade.brokerage_fee = new_trade.brokerage_fee
         db.session.commit()
         return trade_schema.dump(existing_trade), 200
-    except PortmanError as error:
+    except PortfolioManagerError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()
@@ -128,7 +134,7 @@ def delete(portfolio_id, trade_id):
         db.session.delete(trade)
         db.session.commit()
         return "", 204
-    except PortmanError as error:
+    except PortfolioManagerError as error:
         return make_error_response(error.status, error.detail)
     except Exception as error:
         db.session.rollback()

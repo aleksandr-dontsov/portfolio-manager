@@ -1,4 +1,4 @@
-from app.extensions import db, bcrypt, jwt
+from app.components.extensions import db, bcrypt, jwt
 
 
 class User(db.Model):

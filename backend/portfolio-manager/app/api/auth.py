@@ -1,7 +1,7 @@
-from app.extensions import db, bcrypt
-from app.common import make_error_response
+from app.components.extensions import db, bcrypt
+from app.components.errors import make_error_response
+from app.components.config import Config
 from app.models.user import User
-from app.config import Config
 from email_validator import validate_email, EmailNotValidError
 from password_strength import PasswordPolicy
 from flask import jsonify

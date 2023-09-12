@@ -5,7 +5,11 @@ name = "pypi"
 
 [packages]
 flask = "*"
-alpha-vantage = "*"
+redis = {extras = ["hiredis"], version = "*"}
+connexion = {extras = ["swagger-ui"], version = "*"}
+gunicorn = "*"
+requests = "*"
+apscheduler = "*"
 
 [dev-packages]
 

@@ -8,7 +8,7 @@ behavior of the auth views.
 import pytest
 from conftest import registered_user, new_user
 from flask_security import current_user
-from app.extensions import security
+from app.components.extensions import security
 
 
 def test_signup_form(test_client):

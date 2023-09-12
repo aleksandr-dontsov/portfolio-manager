@@ -1,5 +1,5 @@
-from app.extensions import db
-from app.common import make_error_response
+from app.components.extensions import db
+from app.components.errors import make_error_response
 from app.models.portfolio import Currency, currencies_schema
 from flask_jwt_extended import jwt_required
 

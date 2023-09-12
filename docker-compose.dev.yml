@@ -7,33 +7,45 @@ services:
             # that's why the context should be ./backend/portfolio-manager rather than ./backend/docker
             context: ./backend/portfolio-manager
             dockerfile: ./docker/Dockerfile.dev
-        # 127.0.0.1 is a default value.
-        # Here we need to bind our service to the 0.0.0.0
-        # to make it accessible to machines other than docker.
-        # Otherwise the service will be only accessible
-        # from the docker localhost
-        command: ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
+
+        # Here we need to bind our service to the 0.0.0.0 to make it accessible from machines
+        # other than the current docker container. Otherwise the service will be only accessible from the docker localhost
+        # It exposes 4 processes on the container address 0.0.0.0 loading the object app from the wsgi.py file
+        # Worker class 'gevent' is used to support SSE
+        command: ["gunicorn", "--reload", "--workers", "4", "--bind", "0.0.0.0", "--worker-class", "gevent", "--timeout", "10", "--log-level", "debug", "wsgi:app"]
         volumes:
             - ./backend/portfolio-manager:/usr/src/app:rw
         ports:
-            - "5000:5000"
+            # By default Gunicorn exposes port 8000
+            - "8000:8000"
+        environment:
+            - TZ=Europe/London
         env_file:
             - ./backend/portfolio-manager/config/.dev.env
         depends_on:
             - db
+            - redis
 
-    # market-data-fetcher:
-    #     build:
-    #         context: ./backend/market-data-fetcher
-    #         dockerfile: ./docker/Dockerfile.dev
-    #     command: ["flask", "run"]
-    #     volumes:
-    #         - ./backend/market-data-fetcher:/usr/src/app:rw
-    #     env_file:
-    #         - ./backend/market-data-fetcher/config/.dev.env
-    #     depends_on:
-    #         - portfolio-manager
+    market-data-fetcher:
+        build:
+            context: ./backend/market-data-fetcher
+            dockerfile: ./docker/Dockerfile.dev
+        # Here we need to bind our service to the 0.0.0.0 to make it accessible from machines
+        # other than the current docker container.
+        command: ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
+        volumes:
+            - ./backend/market-data-fetcher:/usr/src/app:rw
+        environment:
+            - TZ=Europe/London
+        env_file:
+            - ./backend/market-data-fetcher/config/.dev.env
+        depends_on:
+            - portfolio-manager
+            - redis
 
+    redis:
+        image: redis:7-alpine
+        # By default Redis runs on port 6379
 
     db:
         image: postgres:13-alpine
@@ -54,8 +66,6 @@ services:
             - "3000:3000"
         depends_on:
             - portfolio-manager
-
-
 
 volumes:
     postgres_data:

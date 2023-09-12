@@ -45,7 +45,7 @@ class Config(object):
     )
 
     # The secret key is used to decode/encode JWTs when using a symmetric signing algorithm
-    # If this value is not set, SECRET_KEY value will be used instead
+    # If this value is not`` set, SECRET_KEY value will be used instead
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "BAD_JWT_SECRET_KEY")
 
     # Specifies for how long an access token should be valid before it expires
@@ -75,6 +75,18 @@ class Config(object):
 
     # Alpha Vantage API key
     ALPHA_VANTAGE_API_KEY = "VI7YS8B4N0TLBIYJ"
+
+    # Redis URL
+    REDIS_URL = os.getenv("REDIS_URL")
+
+    # Allow requests from the frontend
+    CORS_ORIGINS = "http://localhost:3000"
+
+    # Market Data Fetcher URL
+    MARKET_DATA_FETCHER_BASE_URL = "http://market-data-fetcher:5000/api/v1"
+
+    # Securities update interval
+    SECURITIES_UPDATE_INTERVAL_HOURS = 24
 
 
 class ProductionConfig(Config):

@@ -13,12 +13,13 @@ marshmallow-enum = "*"
 flask-marshmallow = {extras = ["sqlalchemy"], version = "*"}
 sqlalchemy = "==2.0.1"
 flask-migrate = "*"
-gunicorn = "*"
 flask-bcrypt = "*"
 flask-jwt-extended = "*"
 email-validator = "*"
 password-strength = "*"
-alpha-vantage = "*"
+gunicorn = {extras = ["gevent"], version = "*"}
+redis = {extras = ["hiredis"], version = "*"}
+flask-cors = "*"
 
 [dev-packages]
 pytest = "*"

@@ -1,4 +1,13 @@
-from app.extensions import db, migrate, marshmallow, jwt, bcrypt, market_data_api
+from app.components.extensions import (
+    db,
+    migrate,
+    marshmallow,
+    jwt,
+    bcrypt,
+)
+
+from app.components.market_data_subscriber import market_data_subscriber
+from app.components.market_data_fetcher import market_data_fetcher
 from connexion import FlaskApp
 from connexion.resolver import RelativeResolver
 from flask_jwt_extended import (
@@ -7,8 +16,10 @@ from flask_jwt_extended import (
     set_access_cookies,
     get_current_user,
 )
-import pathlib
+from flask_cors import CORS
 from datetime import datetime, timezone, timedelta
+import pathlib
+import logging
 
 
 def create_app(config_name):
@@ -19,22 +30,18 @@ def create_app(config_name):
 
     # Configure underlying Flask app
     app = connexion_app.app
-    config_module = f"app.config.{config_name.capitalize()}Config"
+    config_module = f"app.components.config.{config_name.capitalize()}Config"
     app.config.from_object(config_module)
 
-    register_blueprints(app)
+    # Enables Cross Origin Resource Sharing for the requests from the frontend.
+    # supports_credentials allows cookies and credentials to be submitted across domains
+    CORS(app, supports_credentials=True)
 
     initialize_extensions(app)
-
+    initialize_components(app)
     configure_logging(app)
 
-    register_error_handlers(app)
-
     return app
-
-
-def register_blueprints(app):
-    pass
 
 
 def initialize_extensions(app):
@@ -43,7 +50,6 @@ def initialize_extensions(app):
     marshmallow.init_app(app)
     jwt.init_app(app)
     bcrypt.init_app(app)
-    market_data_api.init_app(app)
 
     # Refresh token that will expire in less than 30 minutes
     @app.after_request
@@ -62,9 +68,12 @@ def initialize_extensions(app):
             return response
 
 
+def initialize_components(app):
+    market_data_subscriber.init_app(app)
+    market_data_fetcher.init_app(app)
+
+
 def configure_logging(app):
-    pass
-
-
-def register_error_handlers(app):
-    pass
+    gunicorn_logger = logging.getLogger("gunicorn.error")
+    app.logger.handlers = gunicorn_logger.handlers
+    # TODO: log all incoming requests and outgoing responses

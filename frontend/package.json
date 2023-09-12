@@ -39,5 +39,5 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://portfolio-manager:5000"
+  "proxy": "http://portfolio-manager:8000"
 }

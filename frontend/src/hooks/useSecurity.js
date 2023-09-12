@@ -16,9 +16,10 @@ export function useSecurity() {
                     url: "/api/securities",
                     method: "GET",
                 });
+                console.log(response)
                 setSecurities(response.data);
             } catch (error) {
-                console.error(`Cannot load securities. ${error.response.data.detail}`);
+                console.error(`Cannot load securities. ${error}`);
             }
         };
         const diffInHours = calculateTimeDiffInHours(new Date(securities.updateTimestamp), new Date());
