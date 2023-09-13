@@ -1,8 +1,9 @@
-import enum
 from app.components.extensions import db, marshmallow
-
+from app.models.user import User
 from marshmallow_enum import EnumField
 from marshmallow_sqlalchemy import fields
+
+import enum
 
 
 class Currency(db.Model):

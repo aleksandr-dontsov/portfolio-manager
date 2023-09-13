@@ -25,6 +25,7 @@ services:
         depends_on:
             - db
             - redis
+            - market-data-fetcher
 
     market-data-fetcher:
         build:
@@ -40,7 +41,6 @@ services:
         env_file:
             - ./backend/market-data-fetcher/config/.dev.env
         depends_on:
-            - portfolio-manager
             - redis
 
     redis:

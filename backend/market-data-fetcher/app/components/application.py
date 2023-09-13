@@ -21,6 +21,7 @@ class Application:
         self._securities = SecurityCache()
         self._symbols = ThreadSafeCache()
         self._exchange_rates = ThreadSafeCache()
+        self._requires_update_after_market_close = True
 
     def init_app(self, app):
         """
@@ -96,7 +97,6 @@ class Application:
         return self._exchange_rates
 
     def __update_securities(self):
-        self._app.logger.info("Update securities")
         # Currently support only US stock exchanges
         SUPPORTED_EXCHANGES = ("NYSE", "NASDAQ", "BATS", "CBOE", "AMEX")
         updated_security_count = 0
@@ -108,7 +108,9 @@ class Application:
                     continue
                 self._securities.update_security(security.get_symbol(), security)
                 updated_security_count += 1
-            self._app.logger.info(f"Stats: updated {updated_security_count} securities")
+            self._app.logger.info(
+                f"Stats: updated {updated_security_count} securities."
+            )
         except Exception as error:
             self._app.logger.error(f"Unable to update the security cache. {error}.")
 
@@ -126,9 +128,17 @@ class Application:
             market_open_utc = time(14, 30)
             market_close_utc = time(21, 0)
             if not (market_open_utc <= utc_now <= market_close_utc):
-                self._app.logger.info("Market is closed. Nothing to publish")
+                # Update securities after the market has been closed
+                if self._requires_update_after_market_close:
+                    self._app.logger.info(
+                        "Update securities after the market has been closed."
+                    )
+                    self.__update_securities()
+                    self._requires_update_after_market_close = False
+                self._app.logger.info("Market is closed. Nothing to publish.")
                 return
 
+            self._requires_update_after_market_close = True
             self.__update_securities()
             securities = self._securities.get_securities(symbols)
             with self._app.app_context():

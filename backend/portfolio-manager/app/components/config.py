@@ -88,6 +88,9 @@ class Config(object):
     # Securities update interval
     SECURITIES_UPDATE_INTERVAL_HOURS = 24
 
+    # Max number of searched securities per request
+    SECURITIES_MAX_SEARCH_RESULTS = 50
+
 
 class ProductionConfig(Config):
     """Production configuration"""

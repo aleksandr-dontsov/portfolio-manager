@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useAxios } from '../hooks/useAxios';
+import { useDebounce } from '../hooks/useDebounce';
 
 const SECURITY_SUGGESTIONS_NUMBER = 10;
 
@@ -12,33 +14,38 @@ function SecuritySuggestion({ suggestion, onSuggestionClick }) {
     );
 }
 
-export function SecuritySearchBar({ security, setSecurity, securities }) {
+export function SecuritySearchBar({ security, setSecurity }) {
     const [securityText, setSecurityText] = useState(security ? security.symbol : "");
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(!security);
+    const axios = useAxios();
 
     // Update suggestions
-    useEffect(() => {
+    useDebounce(() => {
         const searchText = securityText.toLowerCase();
         if (searchText === "") {
             setSuggestions([]);
             return;
         }
 
-        if (securities.length === 0) {
-            setSuggestions([]);
-            return;
+        const searchSecurities = async () => {
+            try {
+                const response = await axios.request({
+                    url: "/api/securities/search",
+                    method: "GET",
+                    params: {
+                        query: securityText
+                    }
+                })
+                setSuggestions(response.data.slice(0, SECURITY_SUGGESTIONS_NUMBER))
+            } catch (error) {
+                console.error(`Unable to search for securities. ${error}`);
+                setSuggestions([]);
+            }
         }
 
-        const result = securities.filter((security) => {
-            if (security.status === "DELISTED") {
-                return false;
-            }
-            return security.symbol.toLowerCase().includes(searchText) ||
-                   security.name.toLowerCase().includes(searchText);
-        }).slice(0, SECURITY_SUGGESTIONS_NUMBER);
-        setSuggestions(result);
-    }, [securityText]);
+        searchSecurities();
+    }, 1000);
 
     const handleSearchInputChange = (event) => {
         setSecurityText(event.target.value);

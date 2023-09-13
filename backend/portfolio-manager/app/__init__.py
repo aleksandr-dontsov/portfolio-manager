@@ -5,9 +5,9 @@ from app.components.extensions import (
     jwt,
     bcrypt,
 )
-
 from app.components.market_data_subscriber import market_data_subscriber
 from app.components.market_data_fetcher import market_data_fetcher
+from app.components.securities_manager import securities_manager
 from connexion import FlaskApp
 from connexion.resolver import RelativeResolver
 from flask_jwt_extended import (
@@ -71,6 +71,7 @@ def initialize_extensions(app):
 def initialize_components(app):
     market_data_subscriber.init_app(app)
     market_data_fetcher.init_app(app)
+    securities_manager.init_app(app)
 
 
 def configure_logging(app):
