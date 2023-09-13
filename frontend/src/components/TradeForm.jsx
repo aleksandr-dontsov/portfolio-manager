@@ -10,7 +10,6 @@ import { AmountField } from './AmountField';
 import { CurrencyAmountField } from './CurrencyAmountField';
 import { DatetimeField } from './DatetimeField';
 import { TradeTypeMenu } from './TradeTypeMenu';
-import { useSecurity } from '../hooks/useSecurity';
 import {
     toInputDatetimeLocal,
     toUtcDatetime,
@@ -21,7 +20,6 @@ const USD_CURRENCY_ID = 1;
 
 export function TradeForm({ formName, currency, trade, tradeRequest }) {
     const [error, setError] = useState(null);
-    const [securities] = useSecurity();
     const [security, setSecurity] = useState(trade ? trade.security : null);
     const navigate = useNavigate();
     const axios = useAxios();
@@ -57,8 +55,7 @@ export function TradeForm({ formName, currency, trade, tradeRequest }) {
             >
                 <SecuritySearchBar
                     security={ security }
-                    setSecurity={ setSecurity }
-                    securities={ securities } /><br/>
+                    setSecurity={ setSecurity } /><br/>
                 <DatetimeField
                     datetime={ trade && toInputDatetimeLocal(trade.trade_datetime) } /><br/>
                 <TradeTypeMenu tradeType="BUY" /><br/>

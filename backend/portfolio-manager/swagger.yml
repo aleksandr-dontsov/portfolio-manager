@@ -180,6 +180,15 @@ components:
                 items:
                     type: "string"
 
+        query:
+            name: "query"
+            description: "Query to search for securities."
+            in: query
+            required: true
+            schema:
+                type: "string"
+
+
 
 paths:
     /signup:
@@ -260,12 +269,14 @@ paths:
                 "500":
                     $ref: "#/components/responses/InternalServerError"
 
-    /securities:
+    /securities/search:
         get:
-            operationId: "securities.read_all"
+            operationId: "securities.search"
             tags:
                 - Securities
-            summary: "Read the securities list"
+            summary: "Search for the securities"
+            parameters:
+                - $ref: "#/components/parameters/query"
             responses:
                 "200":
                     description: "Successfully read securities list"
@@ -296,19 +307,12 @@ paths:
                 "401":
                     $ref: "#/components/responses/Unauthorized"
 
-    # The relative URL of your API endpoint
     /portfolios:
-        # The HTTP method that this URL endpoint will respond to
         get:
-            # The Python function that will respond to the request
             operationId: "portfolios.read_all"
-            # The tags assigned to this endpoint. It helps to group
-            # the operations in the UI
             tags:
                 - Portfolios
-            # The UI display text for this endpoint
             summary: "Read the list of portfolios"
-            # The status codes the endpoint responds with
             responses:
                 "200":
                     description: "Successfully read portfolios list"
