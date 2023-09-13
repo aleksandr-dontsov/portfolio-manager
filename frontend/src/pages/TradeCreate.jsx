@@ -14,5 +14,5 @@ export default function TradeCreate() {
             formName="Create"
             currency={ state.currency }
             tradeRequest={ createTradeRequest } />
-    )
+    );
 }
