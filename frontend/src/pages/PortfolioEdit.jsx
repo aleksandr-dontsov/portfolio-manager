@@ -4,56 +4,19 @@ import {
     useParams,
 } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import {
-    TextField,
-    SubmitButton,
-    CancelButton
-} from '../components/Common';
-import { CurrencyMenu } from '../components/CurrencyMenu';
-import { useCurrency } from '../hooks/useCurrency';
+import { SubmitButton } from '../components/Common';
+import { PortfolioForm } from '../components/PortfolioForm';
 
-function PortfolioEditForm({ axios, portfolio }) {
-    const [error, setError] = useState(null);
-    const [currency, setCurrency] = useState(portfolio.currency);
-    const navigate = useNavigate();
-    const currencies = useCurrency();
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        const formData = new FormData(event.target);
-        try {
-            await axios.request({
-                method: "PUT",
-                data: {
-                    name: formData.get("name"),
-                    currency_id: currency.id,
-                },
-                url: `/api/portfolios/${portfolio.id}`
-            });
-        } catch (error) {
-            setError(error.response.data.detail);
-            return;
-        }
-        navigate(-1);
-    }
-
+function PortfolioEditForm({ portfolio }) {
+    const editPortfolioRequest = {
+        method: "PUT",
+        url: `/api/portfolios/${portfolio.id}`
+    };
     return (
-        <div>
-            <h2>Edit Portfolio</h2>
-            <form
-                method="put"
-                onSubmit={handleSubmit}
-            >
-                <TextField text={ portfolio.name } /><br />
-                <CurrencyMenu
-                    currency={ currency }
-                    setCurrency={ setCurrency }
-                    currencies={ currencies } /><br />
-                <SubmitButton name="Save" />
-                <CancelButton />
-            </form>
-            { error && <span>{error}</span> }
-        </div>
+        <PortfolioForm
+            formName="Edit"
+            portfolio={ portfolio }
+            portfolioRequest={ editPortfolioRequest }/>
     );
 }
 
@@ -110,7 +73,6 @@ export default function PortfolioEdit() {
     return (
         <div>
             <PortfolioEditForm
-                axios={ axios }
                 portfolio={ portfolio } /><br />
             <PortfolioDeleteForm
                 axios={ axios }
