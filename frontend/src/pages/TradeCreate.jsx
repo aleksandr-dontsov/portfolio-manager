@@ -6,7 +6,7 @@ export default function TradeCreate() {
     const params = useParams();
     const createTradeRequest = {
         method: "POST",
-        url: `/api/portfolios/${params.portfolioId}/trades`
+        url: `/api/v1/portfolios/${params.portfolioId}/trades`
     };
 
     return (

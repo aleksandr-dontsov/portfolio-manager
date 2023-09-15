@@ -6,14 +6,14 @@ import { calculateTimeDiffInHours } from '../utils/utils';
 const CURRENCY_UPDATE_INTERVAL_HOURS = 24 * 7;
 
 export function CurrencyMenu({ currency, setCurrency }) {
-    const [currencies, setCurrencies] = useLocalStorage("currencies", []);
+    const [currencies, setCurrencies] = useLocalStorage("currencies", null);
     const axios = useAxios();
 
     useEffect(() => {
         const loadCurrencies = async () => {
             try {
                 const response = await axios.request({
-                    url: "/api/currencies",
+                    url: "/api/v1/currencies",
                     method: "GET",
                 });
                 setCurrencies(response.data);
@@ -22,7 +22,7 @@ export function CurrencyMenu({ currency, setCurrency }) {
             }
         };
         const diffInHours = calculateTimeDiffInHours(new Date(currencies.updateTimestamp), new Date());
-        if (currencies.value.length === 0 || diffInHours >= CURRENCY_UPDATE_INTERVAL_HOURS) {
+        if (!currencies.value || diffInHours >= CURRENCY_UPDATE_INTERVAL_HOURS) {
             loadCurrencies();
         }
     }, []);

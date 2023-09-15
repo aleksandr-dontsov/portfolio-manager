@@ -234,7 +234,7 @@ function PortfolioPerformancePanel({ portfolio }) {
 export default function PortfolioDashboard() {
     const params = useParams();
     const { data: portfolio, error, isLoaded } =
-        useApi(`/api/portfolios/${params.portfolioId}`, "GET");
+        useApi(`/api/v1/portfolios/${params.portfolioId}`, "GET");
 
     if (!isLoaded) {
         return (

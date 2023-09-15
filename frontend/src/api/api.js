@@ -13,11 +13,11 @@ export function getQuotesUrl(securities) {
     });
     // For SSE the requests will be sent directly to the backend without using proxy
     // Otherwise a client cannot receive any events from the backend
-    return new URL(`?${params}`, 'http://localhost:8000/api/streams/quotes');
+    return new URL(`?${params}`, 'http://localhost:8000/api/v1/securities/quotes/stream');
 }
 
 export const changePassword = async (currentPassword, newPassword) => {
-    return await api.post("/api/change-password", {
+    return await api.post("/api/v1/change-password", {
         current_password: currentPassword,
         new_password: newPassword,
     });

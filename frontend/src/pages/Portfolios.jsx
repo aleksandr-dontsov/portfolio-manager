@@ -23,7 +23,7 @@ function PortfolioRow({ index, portfolio }) {
 }
 
 export default function Portfolios() {
-    const { data: portfolios, error, isLoaded } = useApi("/api/portfolios", "GET");
+    const { data: portfolios, error, isLoaded } = useApi("/api/v1/portfolios", "GET");
 
     if (!isLoaded) {
         return (

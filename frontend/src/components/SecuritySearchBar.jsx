@@ -15,15 +15,14 @@ function SecuritySuggestion({ suggestion, onSuggestionClick }) {
 }
 
 export function SecuritySearchBar({ security, setSecurity }) {
-    const [securityText, setSecurityText] = useState(security ? security.symbol : "");
+    const [query, setQuery] = useState(security ? security.symbol : "");
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(!security);
     const axios = useAxios();
 
     // Update suggestions
     useDebounce(() => {
-        const searchText = securityText.toLowerCase();
-        if (searchText === "") {
+        if (query === "") {
             setSuggestions([]);
             return;
         }
@@ -31,10 +30,10 @@ export function SecuritySearchBar({ security, setSecurity }) {
         const searchSecurities = async () => {
             try {
                 const response = await axios.request({
-                    url: "/api/securities/search",
+                    url: "/api/v1/securities",
                     method: "GET",
                     params: {
-                        query: securityText
+                        query: query.toLowerCase()
                     }
                 })
                 setSuggestions(response.data.slice(0, SECURITY_SUGGESTIONS_NUMBER))
@@ -45,10 +44,10 @@ export function SecuritySearchBar({ security, setSecurity }) {
         }
 
         searchSecurities();
-    }, 1000);
+    }, 250, query);
 
     const handleSearchInputChange = (event) => {
-        setSecurityText(event.target.value);
+        setQuery(event.target.value);
         setSecurity(null);
         setShowSuggestions(true);
     }
@@ -66,7 +65,7 @@ export function SecuritySearchBar({ security, setSecurity }) {
     }
 
     const handleClickSuggestion = (suggestion) => {
-        setSecurityText(suggestion.symbol);
+        setQuery(suggestion.symbol);
         setSecurity(suggestion);
     }
 
@@ -75,7 +74,7 @@ export function SecuritySearchBar({ security, setSecurity }) {
             Security:
             <input
                 type="search"
-                value={ securityText }
+                value={ query }
                 onChange= { handleSearchInputChange }
                 onFocus={ handleFocus }
                 onBlur={ handleBlur }

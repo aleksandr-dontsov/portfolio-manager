@@ -1,7 +1,8 @@
 import { AmountField } from "./AmountField";
-import { convertFromUsd } from "../utils/utils";
+import { useCurrencyConverter } from "../hooks/useCurrencyConverter";
 
 export function CurrencyAmountField({ label, name, min, max, usdAmount, currency }) {
+    const { convertFromUsd } = useCurrencyConverter()
     const amount = convertFromUsd(usdAmount, currency.code);
     return (
         <div>

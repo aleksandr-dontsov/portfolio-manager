@@ -6,23 +6,19 @@ info:
     title: "Portfolio Manager REST API"
     description: "API for managing financial portfolios"
     version: "1.0.0"
+    contact:
+        name: "Aleksandr Dontsov"
+        email: "dontsov.aleksander@gmail.com"
 
 servers:
-    # Defines the root path of your API
-    # All API paths will be accessible through
-    # http://localhost:8000/api
-    - url: "/api"
+    - url: "http://localhost:8000/api/v1"
 
 # Components are building blocks in your OpenAPI specification
 # that you can reference from other parts of your sepcification
 components:
     schemas:
         Error:
-            # Data type of the schema
             type: "object"
-            # Required properties
-            # Any property you define as required
-            # must exist in properties
             required:
                 - status
                 - detail
@@ -269,7 +265,7 @@ paths:
                 "500":
                     $ref: "#/components/responses/InternalServerError"
 
-    /securities/search:
+    /securities:
         get:
             operationId: "securities.search"
             tags:
@@ -289,6 +285,23 @@ paths:
                 "401":
                     $ref: "#/components/responses/Unauthorized"
 
+    /securities/quotes/stream:
+        get:
+            operationId: "quotes.stream"
+            tags:
+                - Streams
+            summary: "Subscribe for real-time updates of security quotes"
+            parameters:
+                - $ref: "#/components/parameters/securities"
+            responses:
+                "200":
+                    description: "Successfully subscribed for security quotes updates"
+                    content:
+                        text/event-stream:
+                            schema:
+                                type: "string"
+
+
     /currencies:
         get:
             operationId: "currencies.read_all"
@@ -304,6 +317,22 @@ paths:
                                 type: "array"
                                 items:
                                     $ref: "#/components/schemas/Currency"
+                "401":
+                    $ref: "#/components/responses/Unauthorized"
+
+    /exchange-rates:
+        get:
+            operationId: "currencies.exchange_rates"
+            tags:
+                - Currencies
+            summary: "Read the currency exchange rates"
+            responses:
+                "200":
+                    description: "Successfully read currencies exchange rates"
+                    content:
+                        application/json:
+                            schema:
+                                type: "array"
                 "401":
                     $ref: "#/components/responses/Unauthorized"
 
@@ -506,19 +535,3 @@ paths:
                     description: "Successfully deleted trade"
                 "401":
                     $ref: "#/components/responses/Unauthorized"
-
-    /streams/quotes:
-        get:
-            operationId: "streams.quotes"
-            tags:
-                - Streams
-            summary: "Subscribe for real-time updates of security quotes"
-            parameters:
-                - $ref: "#/components/parameters/securities"
-            responses:
-                "200":
-                    description: "Successfully subscribed for security quotes updates"
-                    content:
-                        text/event-stream:
-                            schema:
-                                type: "string"

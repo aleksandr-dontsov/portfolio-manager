@@ -13,14 +13,15 @@ import { TradeTypeMenu } from './TradeTypeMenu';
 import {
     toInputDatetimeLocal,
     toUtcDatetime,
-    convertToUsd
 } from '../utils/utils';
+import { useCurrencyConverter } from '../hooks/useCurrencyConverter';
 
 const USD_CURRENCY_ID = 1;
 
 export function TradeForm({ formName, currency, trade, tradeRequest }) {
     const [error, setError] = useState(null);
     const [security, setSecurity] = useState(trade ? trade.security : null);
+    const { convertToUsd } = useCurrencyConverter()
     const navigate = useNavigate();
     const axios = useAxios();
 

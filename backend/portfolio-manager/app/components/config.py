@@ -91,6 +91,9 @@ class Config(object):
     # Max number of searched securities per request
     SECURITIES_MAX_SEARCH_RESULTS = 50
 
+    # Currency exchange rate update interval
+    CURRENCY_EXCHANGE_RATE_UPDATE_INTERVAL_HOURS = 24
+
 
 class ProductionConfig(Config):
     """Production configuration"""

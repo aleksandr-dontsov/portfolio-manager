@@ -10,8 +10,7 @@ from flask import (
 import redis
 import json
 
-QUOTES_CHANNEL = "quotes-channel"
-EXCHANGE_RATES_CHANNEL = "exchange-rates-channel"
+MARKET_DATA_CHANNEL = "market-data-channel"
 
 
 def filter_quotes_by_securities(quotes: dict, securities: list[str]) -> dict:
@@ -27,13 +26,13 @@ def wrap_quotes(quotes: dict) -> str:
 
 
 @jwt_required()
-def quotes(securities):
+def stream(securities):
     current_app.logger.info(f"Subscribe for {securities} quotes streaming")
     try:
         quotes = market_data_fetcher.subscribe_for_quotes(securities)
         current_app.logger.info(f"Quotes: {quotes}")
         current_user = get_current_user()
-        subscriber = market_data_subscriber.subscribe(QUOTES_CHANNEL)
+        subscriber = market_data_subscriber.subscribe(MARKET_DATA_CHANNEL)
 
         def generator(quotes):
             try:
@@ -54,7 +53,7 @@ def quotes(securities):
                         yield wrap_quotes(quotes)
             finally:
                 try:
-                    subscriber.unsubscribe(QUOTES_CHANNEL)
+                    subscriber.unsubscribe(MARKET_DATA_CHANNEL)
                     current_app.logger.info(
                         f"A user {current_user.id} successfully unsibscribed from quotes streaming"
                     )
