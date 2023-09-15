@@ -19,12 +19,6 @@ export const useTimeout = (callback, delay) => {
         timeoutRef.current && clearTimeout(timeoutRef.current);
     })
 
-    // Start the timer and clean up
-    useEffect(() => {
-        set();
-        return clear;
-    }, [delay, set, clear]);
-
     // Reset the timer
     const reset = useCallback(() => {
         clear();

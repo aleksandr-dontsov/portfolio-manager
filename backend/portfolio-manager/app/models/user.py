@@ -46,4 +46,4 @@ def user_identity_lookup(user):
 @jwt.user_lookup_loader
 def user_lookup_callback(_jwt_header, jwt_data):
     id = jwt_data["sub"]
-    return db.session.execute(db.select(User).filter_by(id=id)).scalar()
+    return db.session.scalar(db.select(User).filter_by(id=id))

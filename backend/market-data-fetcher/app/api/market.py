@@ -49,7 +49,7 @@ def fx(currencies: list[str]):
         return {"message": str(error)}, 500
 
 
-def security():
+def securities():
     try:
         current_app.logger.info("Get the traded security list")
         securities = application.get_securities().get_all_securities()

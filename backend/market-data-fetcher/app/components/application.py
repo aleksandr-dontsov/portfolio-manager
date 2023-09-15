@@ -4,6 +4,7 @@ from app.components.market_data_publisher import MarketDataPublisher
 from app.components.cache import ThreadSafeCache
 from app.components.security_cache import SecurityCache
 from datetime import datetime, time
+from logging import Logger
 
 
 class Application:
@@ -22,6 +23,7 @@ class Application:
         self._symbols = ThreadSafeCache()
         self._exchange_rates = ThreadSafeCache()
         self._requires_update_after_market_close = True
+        self._logger = Logger("MarketDataFetcher")
 
     def init_app(self, app):
         """
@@ -58,7 +60,7 @@ class Application:
             if self._scheduler.running():
                 self._scheduler.shutdown()
         except Exception as error:
-            self._app.logger.error(f"Unable to shut down the scheduler. {error}")
+            self._logger.error(f"Unable to shut down the scheduler. {error}")
 
     def get_scheduler(self):
         """

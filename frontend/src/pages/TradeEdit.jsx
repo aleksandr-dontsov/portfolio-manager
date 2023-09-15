@@ -12,7 +12,7 @@ function TradeEditForm({ trade }) {
     const { state } = useLocation();
     const updateTradeRequest = {
         method: "PUT",
-        url: `/api/portfolios/${trade.portfolio_id}/trades/${trade.id}`
+        url: `/api/v1/portfolios/${trade.portfolio_id}/trades/${trade.id}`
     };
 
     return (
@@ -37,7 +37,7 @@ function TradeDeleteForm({ axios, trade }) {
         try {
             await axios.request({
                 method: "DELETE",
-                url: `/api/portfolios/${trade.portfolio_id}/trades/${trade.id}`
+                url: `/api/v1/portfolios/${trade.portfolio_id}/trades/${trade.id}`
             });
         } catch (error) {
             setError(error);
@@ -64,7 +64,7 @@ function TradeDeleteForm({ axios, trade }) {
 export default function TradeEdit() {
     const params = useParams();
     const { data: trade, error, isLoaded, axios } =
-        useApi(`/api/portfolios/${params.portfolioId}/trades/${params.tradeId}`, "GET");
+        useApi(`/api/v1/portfolios/${params.portfolioId}/trades/${params.tradeId}`, "GET");
 
     if (!isLoaded) {
         return (

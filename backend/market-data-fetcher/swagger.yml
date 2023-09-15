@@ -1,6 +1,5 @@
 # swagger.yml
 
-# The version of your OpenAPI definition
 openapi: 3.0.0
 info:
     title: "Market Data Fetcher API"
@@ -8,11 +7,8 @@ info:
     version: "1.0.0"
 
 servers:
-    # Defines the root path of your API
     - url: "http://localhost:5000/api/v1"
 
-# Components are building blocks in your OpenAPI specification
-# that you can reference from other parts of your sepcification
 components:
     schemas:
         Response:
@@ -66,7 +62,7 @@ paths:
                     description: "The service is unhealthy"
 
     /market/quote:
-        put:
+        post:
             operationId: "market.quote"
             tags:
                 - Market
@@ -105,9 +101,9 @@ paths:
                 "500":
                     $ref: "#/components/responses/InternalServerError"
 
-    /market/security/list:
+    /market/securities:
         get:
-            operationId: "market.security"
+            operationId: "market.securities"
             tags:
                 - Market
             summary: "Get a list of traded securities"

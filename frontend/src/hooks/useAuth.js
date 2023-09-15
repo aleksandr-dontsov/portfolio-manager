@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
 
     // call this function when you want to authenticate the user
     const handleLogin = async (email, password) => {
-        await api.post("/api/login", {
+        await api.post("/api/v1/login", {
             email,
             password
         });

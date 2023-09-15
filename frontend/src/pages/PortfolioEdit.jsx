@@ -10,7 +10,7 @@ import { PortfolioForm } from '../components/PortfolioForm';
 function PortfolioEditForm({ portfolio }) {
     const editPortfolioRequest = {
         method: "PUT",
-        url: `/api/portfolios/${portfolio.id}`
+        url: `/api/v1/portfolios/${portfolio.id}`
     };
     return (
         <PortfolioForm
@@ -32,7 +32,7 @@ function PortfolioDeleteForm({ axios, portfolio }) {
         try {
             await axios.request({
                 method: "DELETE",
-                url: `/api/portfolios/${portfolio.id}`
+                url: `/api/v1/portfolios/${portfolio.id}`
             });
         } catch (error) {
             setError(error);
@@ -58,7 +58,7 @@ function PortfolioDeleteForm({ axios, portfolio }) {
 export default function PortfolioEdit() {
     const params = useParams();
     const { data: portfolio, error, isLoaded, axios } =
-        useApi(`/api/portfolios/${params.portfolioId}`, "GET");
+        useApi(`/api/v1/portfolios/${params.portfolioId}`, "GET");
 
     if (!isLoaded) {
         return (
